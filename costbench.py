@@ -341,26 +341,57 @@ def wait_for_server(base_url, timeout=240):
 
 def run_concurrency(base_url, model, conc, max_tokens,
                     duration_s=90.0, settle=20.0, ramp_skip_s=25.0):
-    """Carico SOSTENUTO a concorrenza fissa per duration_s secondi.
+    """Carico a CIRCUITO CHIUSO: esattamente conc richieste sempre in volo.
 
-    Una singola ondata di richieste dura pochi secondi e il sensore di
-    potenza non fa in tempo ad accorgersene. Qui si tengono conc slot
-    sempre occupati finche' non scade il tempo.
+    La versione precedente lavorava a ondate con barriera: lanciava conc
+    richieste e aspettava che finissero tutte. Ma non finiscono insieme,
+    quindi a fine ondata restavano 3, poi 1, poi 0 richieste attive e la
+    GPU si scaricava. L'effetto cresce col batch e falsava la potenza
+    media verso il basso proprio ai livelli alti.
+
+    Qui ogni worker riparte appena la sua richiesta termina. Il campo
+    achieved_concurrency serve a verificarlo: deve essere ~= conc.
     """
     time.sleep(settle)  # attende il decadimento del carico precedente
     sampler = PowerSampler(interval=0.25)
     sampler.start()
 
     results = []
+    lock = threading.Lock()
+    stop = threading.Event()
+    inflight = {"now": 0}
+    occupancy = []          # campioni di richieste-in-volo
+
+    def worker():
+        while not stop.is_set():
+            with lock:
+                inflight["now"] += 1
+            r = stream_one(base_url, model, PROMPT, max_tokens)
+            with lock:
+                inflight["now"] -= 1
+                results.append(r)
+
+    def occupancy_monitor():
+        while not stop.is_set():
+            with lock:
+                occupancy.append(inflight["now"])
+            stop.wait(0.5)
+
     t0 = time.perf_counter()
-    with ThreadPoolExecutor(max_workers=conc) as ex:
-        while time.perf_counter() - t0 < duration_s:
-            futures = [
-                ex.submit(stream_one, base_url, model, PROMPT, max_tokens)
-                for _ in range(conc)
-            ]
-            results.extend(f.result() for f in futures)
+    threads = [threading.Thread(target=worker, daemon=True)
+               for _ in range(conc)]
+    mon = threading.Thread(target=occupancy_monitor, daemon=True)
+    for t in threads:
+        t.start()
+    mon.start()
+
+    time.sleep(duration_s)
+    stop.set()
+    for t in threads:
+        t.join(timeout=120)
+    mon.join(timeout=5)
     wall = time.perf_counter() - t0
+
     sampler.stop()
     power = sampler.stats(skip_initial_s=ramp_skip_s)
 
@@ -371,11 +402,16 @@ def run_concurrency(base_url, model, conc, max_tokens,
     per_req = [
         r["tokens"] / r["wall_s"] for r in ok if r["wall_s"] and r["tokens"]
     ]
+    # scarta i primi campioni di occupancy: i worker partono sfasati
+    occ = occupancy[int(len(occupancy) * 0.1):] or occupancy
 
     return {
         "concurrency": conc,
+        "achieved_concurrency": (
+            round(statistics.mean(occ), 2) if occ else None
+        ),
+        "load_pattern": "closed-loop",
         "duration_s_target": duration_s,
-        "waves": len(results) // conc if conc else 0,
         "requests_ok": len(ok),
         "requests_failed": failed,
         "wall_s": round(wall, 3),
@@ -560,6 +596,7 @@ def main():
         c = r.get("cost") or {}
         print(f"    sistema {r['system_tok_s']} tok/s | "
               f"{p.get('avg_w')} W (picco {p.get('peak_w')}) | "
+              f"in volo {r.get('achieved_concurrency')}/{conc} | "
               f"EUR/1M tok {c.get('eur_per_1m_tokens_gross')}")
 
     payload = {
