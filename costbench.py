@@ -20,6 +20,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import shutil
 import statistics
 import subprocess
@@ -41,8 +42,66 @@ HWMON_GLOBS = [
     "/sys/class/drm/card*/device/hwmon/hwmon*/power1_input",
 ]
 
+# Su host multi-GPU condivisi sysfs espone gli hwmon di TUTTE le schede,
+# comprese quelle di altri utenti. Prendere il primo path significa
+# misurare i watt di qualcun altro. Risolviamo via bus PCI.
+
+_RESOLVED = {"bus": None, "card_dir": None, "resolved": False}
+
+
+def _target_pci_bus():
+    """Bus PCI della GPU assegnata a noi. Override: COSTBENCH_PCI_BUS."""
+    env = os.environ.get("COSTBENCH_PCI_BUS")
+    if env:
+        return env.strip().lower()
+    if not shutil.which("rocm-smi"):
+        return None
+    try:
+        r = subprocess.run(["rocm-smi", "--showbus"],
+                           capture_output=True, text=True, timeout=20)
+        m = re.search(r"PCI Bus:\s*([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:"
+                      r"[0-9a-fA-F]{2}\.[0-9a-fA-F])", r.stdout)
+        if m:
+            return m.group(1).lower()
+    except Exception:
+        pass
+    return None
+
+
+def _card_dir_for_bus(bus):
+    """Trova la directory /sys/class/drm/cardN/device con quel bus PCI."""
+    for uevent in sorted(glob.glob("/sys/class/drm/card*/device/uevent")):
+        try:
+            with open(uevent) as f:
+                txt = f.read()
+        except OSError:
+            continue
+        m = re.search(r"PCI_SLOT_NAME=(\S+)", txt)
+        if m and m.group(1).strip().lower() == bus:
+            return os.path.dirname(uevent)
+    return None
+
+
+def _resolve_card():
+    if _RESOLVED["resolved"]:
+        return _RESOLVED
+    bus = _target_pci_bus()
+    _RESOLVED["bus"] = bus
+    _RESOLVED["card_dir"] = _card_dir_for_bus(bus) if bus else None
+    _RESOLVED["resolved"] = True
+    return _RESOLVED
+
 
 def _hwmon_paths():
+    """Solo gli hwmon della NOSTRA scheda. Fallback a tutte se irrisolvibile."""
+    info = _resolve_card()
+    if info["card_dir"]:
+        out = []
+        for pat in ("power1_average", "power1_input"):
+            out.extend(sorted(glob.glob(
+                os.path.join(info["card_dir"], "hwmon", "hwmon*", pat))))
+        if out:
+            return out
     out = []
     for g in HWMON_GLOBS:
         out.extend(sorted(glob.glob(g)))
@@ -171,6 +230,9 @@ def capture_env():
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "hostname": os.uname().nodename,
         "power_backend": _POWER_BACKEND,
+        "gpu_pci_bus": _RESOLVED.get("bus"),
+        "gpu_sysfs_dir": _RESOLVED.get("card_dir"),
+        "hwmon_paths_used": _hwmon_paths(),
     }
     for name, cmd in [
         ("rocm_smi_showallinfo", ["rocm-smi", "--showallinfo"]),
@@ -356,6 +418,13 @@ def preflight():
         print("    >>> OK. Il progetto regge.")
 
     print(f"\n[2] Path hwmon trovati:")
+    info = _resolve_card()
+    print(f"    Bus PCI GPU assegnata : {info['bus'] or 'NON RISOLTO'}")
+    print(f"    Directory scheda      : {info['card_dir'] or 'NON RISOLTA'}")
+    if not info["card_dir"]:
+        print("    !!! ATTENZIONE: host multi-GPU, scheda non identificata.")
+        print("    !!! Rischio di misurare la GPU di un altro utente.")
+        print("    !!! Imposta COSTBENCH_PCI_BUS=0000:xx:00.0 a mano.")
     paths = _hwmon_paths()
     for p in paths or ["  (nessuno)"]:
         print(f"    {p}")
