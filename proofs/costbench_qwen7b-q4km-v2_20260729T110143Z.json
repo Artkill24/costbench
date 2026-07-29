@@ -1,0 +1,118 @@
+{
+  "label": "qwen7b-q4km-v2",
+  "measured": true,
+  "dry_run": false,
+  "environment": {
+    "timestamp_utc": "2026-07-29T11:01:43.004012+00:00",
+    "hostname": "u-9468-f2399e9f",
+    "power_backend": "sysfs",
+    "gpu_pci_bus": "0000:43:00.0",
+    "gpu_sysfs_dir": "/sys/class/drm/card3/device",
+    "hwmon_paths_used": [
+      "/sys/class/drm/card3/device/hwmon/hwmon8/power1_average"
+    ],
+    "rocm_smi_showallinfo": "\n\n============================ ROCm System Management Interface ============================\n============================== Version of System Component ===============================\nDriver version: 6.16.13\n==========================================================================================\n=========================================== ID ===========================================\nGPU[0]\t\t: Device Name: \t\tAMD Radeon Graphics\nGPU[0]\t\t: Device ID: \t\t0x744b\nGPU[0]\t\t: Device Rev: \t\t0x00\nGPU[0]\t\t: Subsystem ID: \t0x0e0c\nGPU[0]\t\t: GUID: \t\t60148\n==========================================================================================\n======================================= Unique ID ========================================\nGPU[0]\t\t: Unique ID: 0x99e3c4fd2f7c77fe\n==========================================================================================\n========================================= VBIOS ==========================================\nGPU[0]\t\t: VBIOS version: 113-D7070910-100\n==========================================================================================\n====================================== Temperature =======================================\nGPU[0]\t\t: Temperature (Sensor edge) (C): 50.0\nGPU[0]\t\t: Temperature (Sensor junction) (C): 58.0\nGPU[0]\t\t: Temperature (Sensor memory) (C): 54.0\n==========================================================================================\n=============================== Current clock frequencies ================================\nGPU[0]\t\t: dcefclk clock level: 0: (145Mhz)\nGPU[0]\t\t: fclk clock level: 4: (1801Mhz)\nGPU[0]\t\t: mclk clock level: 3: (1124Mhz)\nGPU[0]\t\t: sclk clock level: 1: (43Mhz)\nGPU[0]\t\t: socclk clock level: 1: (1200Mhz)\nGPU[0]\t\t: pcie clock level: 2 (16.0GT/s x16)\n==========================================================================================\n=================================== Current Fan Metric ===================================\nGPU[0]\t\t: Fan Level: 51 (20%)\nGPU[0]\t\t: Fan RPM: 936\n==========================================================================================\n================================= Show Performance Level =================================\nGPU[0]\t\t: Performance Level: auto\n==========================================================================================\n==================================== OverDrive Level =====================================\nGPU[0]\t\t: get_overdrive_level_sclk, Not supported on the given system\n==========================================================================================\n==================================== OverDrive Level =====================================\nGPU[0]\t\t: get_mem_overdrive_level_mclk, Not supported on the given system\n==========================================================================================\n======================================= Power Cap ========================================\nGPU[0]\t\t: Max Graphics Package Power (W): 241.0\n==========================================================================================\n================================== Show Power Profiles ===================================\nGPU[0]\t\t: 1. Available power profile (#1 of 7): CUSTOM\nGPU[0]\t\t: 2. Available power profile (#2 of 7): VIDEO\nGPU[0]\t\t: 3. Available power profile (#3 of 7): POWER SAVING\nGPU[0]\t\t: 4. Available power profile (#4 of 7): COMPUTE\nGPU[0]\t\t: 5. Available power profile (#5 of 7): VR\nGPU[0]\t\t: 6. Available power profile (#6 of 7): 3D FULL SCREEN\nGPU[0]\t\t: 7. Available power profile (#7 of 7): BOOTUP DEFAULT*\n==========================================================================================\n=================================== Power Consumption ====================================\nGPU[0]\t\t: Average Graphics Package Power (W): 71.0\n==========================================================================================\n============================== Supported clock frequencies ===============================\nGPU[0]\t\t: Supported dcefclk frequencies on GPU0\nGPU[0]",
+    "rocminfo_head": "\u001b[37mROCk module version 6.16.13 is loaded\u001b[0m\n=====================    \nHSA System Attributes    \n=====================    \nRuntime Version:         1.18\nRuntime Ext Version:     1.15\nSystem Timestamp Freq.:  1000.000000MHz\nSig. Max Wait Duration:  18446744073709551615 (0xFFFFFFFFFFFFFFFF) (timestamp count)\nMachine Model:           LARGE                              \nSystem Endianness:       LITTLE                             \nMwaitx:                  DISABLED\nXNACK enabled:           NO\nDMAbuf Support:          YES\nVMM Support:             YES\n\n==========               \nHSA Agents               \n==========               \n*******                  \nAgent 1                  \n*******                  \n  Name:                    AMD EPYC 9334 32-Core Processor    \n  Uuid:                    CPU-XX                             \n  Marketing Name:          AMD EPYC 9334 32-Core Processor    \n  Vendor Name:             CPU                                \n  Feature:                 None specified                     \n  Profile:                 FULL_PROFILE                       \n  Float Round Mode:        NEAR                               \n  Max Queue Number:        0(0x0)                             \n  Queue Min Size:          0(0x0)                             \n  Queue Max Size:          0(0x0)                             \n  Queue Type:              MULTI                              \n  Node:                    0                                  \n  Device Type:             CPU                                \n  Cache Info:              \n    L1:                      32768(0x8000) KB                   \n  Chip ID:                 0(0x0)                             \n  ASIC Revision:           0(0x0)                             \n  Cacheline Size:          64(0x40)                           \n  Max Clock Freq. (MHz):   0                                  \n  BDFID:                   0                                  \n  Internal Node ID:        0                                  \n  Compute Unit:            64                                 \n  SIMDs per CU:            0                                  \n  Shader Engines:          0                                  \n  Shader Arrs. per Eng.:   0                                  \n  WatchPts on Addr. Ranges:1                                  \n  Memory Properties:       \n  Features:                None\n  Pool Info:               \n    Pool 1                   \n      Segment:                 GLOBAL; FLAGS: FINE GRAINED        \n      Size:                    263852748(0xfba12cc) KB            \n      Allocatable:             TRUE                               \n      Alloc Granule:           4KB                                \n      Alloc Recommended Granule:4KB                                \n      Alloc Alignment:         4KB                                \n      Accessible by all:       TRUE                               \n    Pool 2                   \n      Segment:                 GLOBAL; FLAGS: EXTENDED FINE GRAINED\n      Size:                    263852748(0xfba12cc) KB            \n      Allocatable:             TRUE                               \n      Alloc Granule:           4KB                                \n      Alloc Recommended Granule:4KB                                \n      Alloc Alignment:         4KB                                \n      Accessible by all:       TRUE                               \n    Pool 3                   \n      Segment:                 GLOBAL; FLAGS: KERNARG, FINE GRAINED\n      Size:                    263852748(0xfba12cc) KB            \n      Allocatable:             TRUE                               \n      Alloc Granule:           4KB                                \n      Alloc Recommended Granule:4KB                                \n      Alloc Alignment:         4KB                                \n      Accessible by all:       TRUE                               \n    Pool 4                   \n      Segment:                 GLOBAL; FLAGS: COARSE GRAINED      ",
+    "hipcc_version": "HIP version: 7.2.53211-e1a6bc5663\nAMD clang version 22.0.0git (https://github.com/RadeonOpenCompute/llvm-project roc-7.2.1 26084 f58b06dce1f9c15707c5f808fd002e18c2accf7e)\nTarget: x86_64-unknown-linux-gnu\nThread model: posix\nInstalledDir: /opt/rocm-7.2.1/lib/llvm/bin\nConfiguration file: /opt/rocm-7.2.1/lib/llvm/bin/clang++.cfg\n"
+  },
+  "idle_baseline": {
+    "avg_w": 13.02,
+    "peak_w": 14.0,
+    "min_w": 13.0,
+    "n_samples": 120,
+    "samples_discarded_ramp": 40,
+    "skip_initial_s": 10.0
+  },
+  "config": {
+    "max_tokens": 256,
+    "eur_per_kwh": 0.25,
+    "prompt": "Write a Python function that parses a CSV file and returns the median of a numeric column. Include error handling and docstrings.",
+    "token_counting": "chunk di streaming (approssima 1 chunk = 1 token)"
+  },
+  "runs": [
+    {
+      "concurrency": 1,
+      "duration_s_target": 90.0,
+      "waves": 37,
+      "requests_ok": 37,
+      "requests_failed": 0,
+      "wall_s": 91.783,
+      "total_tokens": 9472,
+      "system_tok_s": 103.2,
+      "per_request_tok_s_median": 103.22,
+      "ttft_s_median": 0.0246,
+      "ttft_s_p95": 0.0262,
+      "power": {
+        "avg_w": 216.44,
+        "peak_w": 220.0,
+        "min_w": 204.0,
+        "n_samples": 267,
+        "samples_discarded_ramp": 100,
+        "skip_initial_s": 25.0
+      },
+      "cost": {
+        "eur_per_kwh_assumed": 0.25,
+        "gpu_board_power_only": true,
+        "eur_per_1m_tokens_gross": 0.1456,
+        "eur_per_1m_tokens_net_of_idle": 0.1369,
+        "idle_w_subtracted": 13.02
+      }
+    },
+    {
+      "concurrency": 4,
+      "duration_s_target": 90.0,
+      "waves": 20,
+      "requests_ok": 80,
+      "requests_failed": 0,
+      "wall_s": 94.541,
+      "total_tokens": 20480,
+      "system_tok_s": 216.63,
+      "per_request_tok_s_median": 54.19,
+      "ttft_s_median": 0.0635,
+      "ttft_s_p95": 0.0673,
+      "power": {
+        "avg_w": 228.79,
+        "peak_w": 236.0,
+        "min_w": 193.0,
+        "n_samples": 278,
+        "samples_discarded_ramp": 100,
+        "skip_initial_s": 25.0
+      },
+      "cost": {
+        "eur_per_kwh_assumed": 0.25,
+        "gpu_board_power_only": true,
+        "eur_per_1m_tokens_gross": 0.0733,
+        "eur_per_1m_tokens_net_of_idle": 0.0692,
+        "idle_w_subtracted": 13.02
+      }
+    },
+    {
+      "concurrency": 16,
+      "duration_s_target": 90.0,
+      "waves": 16,
+      "requests_ok": 256,
+      "requests_failed": 0,
+      "wall_s": 94.431,
+      "total_tokens": 65536,
+      "system_tok_s": 694.01,
+      "per_request_tok_s_median": 43.51,
+      "ttft_s_median": 0.1843,
+      "ttft_s_p95": 0.4312,
+      "power": {
+        "avg_w": 167.82,
+        "peak_w": 174.0,
+        "min_w": 104.0,
+        "n_samples": 277,
+        "samples_discarded_ramp": 100,
+        "skip_initial_s": 25.0
+      },
+      "cost": {
+        "eur_per_kwh_assumed": 0.25,
+        "gpu_board_power_only": true,
+        "eur_per_1m_tokens_gross": 0.0168,
+        "eur_per_1m_tokens_net_of_idle": 0.0155,
+        "idle_w_subtracted": 13.02
+      }
+    }
+  ]
+}

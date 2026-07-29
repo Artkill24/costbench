@@ -1,0 +1,58 @@
+==============================================================
+PREFLIGHT - nessun modello caricato, nessuna ora GPU sprecata
+==============================================================
+
+[1] Backend potenza : sysfs
+    Lettura watt    : 16.0
+    >>> OK. Il progetto regge.
+
+[2] Path hwmon trovati:
+    /sys/class/drm/card1/device/hwmon/hwmon6/power1_average
+    /sys/class/drm/card2/device/hwmon/hwmon7/power1_average
+    /sys/class/drm/card3/device/hwmon/hwmon8/power1_average
+    /sys/class/drm/card4/device/hwmon/hwmon9/power1_average
+    /sys/class/drm/card5/device/hwmon/hwmon10/power1_average
+    /sys/class/drm/card6/device/hwmon/hwmon11/power1_average
+    /sys/class/drm/card7/device/hwmon/hwmon12/power1_average
+    /sys/class/drm/card8/device/hwmon/hwmon13/power1_average
+
+[3] Binari:
+    rocm-smi       /usr/bin/rocm-smi
+    rocminfo       /usr/bin/rocminfo
+    hipcc          /usr/bin/hipcc
+    llama-server   ASSENTE
+    llama-cli      ASSENTE
+    vllm           /opt/venv/bin/vllm
+
+[4] rocm-smi:
+    
+    
+    ============================ ROCm System Management Interface ============================
+    ================================== Memory Usage (Bytes) ==================================
+    GPU[0]		: VRAM Total Memory (B): 51522830336
+    GPU[0]		: VRAM Total Used Memory (B): 28028928
+    ==========================================================================================
+    ====================================== Product Info ======================================
+    GPU[0]		: Card Series: 		AMD Radeon Graphics
+    GPU[0]		: Card Model: 		0x744b
+    GPU[0]		: Card Vendor: 		Advanced Micro Devices, Inc. [AMD/ATI]
+    GPU[0]		: Card SKU: 		D7070910
+    GPU[0]		: Subsystem ID: 	0x0e0c
+    GPU[0]		: Device Rev: 		0x00
+    GPU[0]		: Node ID: 		4
+    GPU[0]		: GUID: 		60148
+    GPU[0]		: GFX Version: 		gfx1100
+    ==========================================================================================
+    ================================== End of ROCm SMI Log ===================================
+    
+
+[5] Stabilita' lettura (5 campioni a 0.5s):
+    14.0 W
+    14.0 W
+    14.0 W
+    14.0 W
+    14.0 W
+
+==============================================================
+Incolla TUTTO questo output nella chat.
+==============================================================
