@@ -55,9 +55,15 @@ sample_once() {
 }
 
 fire() {   # tiene occupati $1 slot per $2 secondi
-    local conc="$1" dur="$2" end=$((SECONDS + dur))
-    while [ $SECONDS -lt $end ]; do
-        for _ in $(seq 1 "$conc"); do
+    local conc="$1"
+    local dur="$2"
+    # NB: assegnazioni separate. In "local a=$1 b=$((a+1))" le espansioni
+    # avvengono PRIMA che local assegni a -> unbound variable con set -u.
+    local end
+    end=$(( $(date +%s) + dur ))
+    while [ "$(date +%s)" -lt "$end" ]; do
+        local i
+        for i in $(seq 1 "$conc"); do
             curl -s "http://127.0.0.1:$PORT/v1/chat/completions" \
                 -H 'Content-Type: application/json' \
                 -d "{\"model\":\"m\",\"messages\":[{\"role\":\"user\",\"content\":\"$PROMPT\"}],\"max_tokens\":512}" \
