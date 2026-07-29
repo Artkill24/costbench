@@ -187,12 +187,18 @@ def read_power_w():
 
 
 class PowerSampler(threading.Thread):
-    """Campiona i watt in background mentre il carico gira."""
+    """Campiona i watt in background mentre il carico gira.
+
+    IMPORTANTE: power1_average e' una media mobile con finestra lunga.
+    Misurato su W7900: ~18s per salire, ~15s per scendere. Run corte
+    non vengono viste dal sensore. Da qui skip_initial_s.
+    """
 
     def __init__(self, interval=0.25):
         super().__init__(daemon=True)
         self.interval = interval
-        self.samples = []
+        self.samples = []          # lista di (t_rel, watt)
+        self._t0 = time.perf_counter()
         # NB: non chiamare questo attributo _stop -- collide con
         # threading.Thread._stop() e rompe join().
         self._stopper = threading.Event()
@@ -201,7 +207,7 @@ class PowerSampler(threading.Thread):
         while not self._stopper.is_set():
             w = read_power_w()
             if w is not None:
-                self.samples.append(w)
+                self.samples.append((time.perf_counter() - self._t0, w))
             self._stopper.wait(self.interval)
 
     def stop(self):
@@ -209,14 +215,22 @@ class PowerSampler(threading.Thread):
         self.join(timeout=3)
         return self.samples
 
-    def stats(self):
-        if not self.samples:
+    def stats(self, skip_initial_s=0.0):
+        """Media escludendo i primi skip_initial_s (rampa del sensore)."""
+        kept = [w for (t, w) in self.samples if t >= skip_initial_s]
+        discarded = len(self.samples) - len(kept)
+        if not kept:
+            kept = [w for (_t, w) in self.samples]
+            discarded = 0
+        if not kept:
             return {"avg_w": None, "peak_w": None, "n_samples": 0}
         return {
-            "avg_w": round(statistics.mean(self.samples), 2),
-            "peak_w": round(max(self.samples), 2),
-            "min_w": round(min(self.samples), 2),
-            "n_samples": len(self.samples),
+            "avg_w": round(statistics.mean(kept), 2),
+            "peak_w": round(max(kept), 2),
+            "min_w": round(min(kept), 2),
+            "n_samples": len(kept),
+            "samples_discarded_ramp": discarded,
+            "skip_initial_s": skip_initial_s,
         }
 
 
@@ -325,21 +339,30 @@ def wait_for_server(base_url, timeout=240):
 # SWEEP
 # --------------------------------------------------------------------------
 
-def run_concurrency(base_url, model, conc, max_tokens, settle=3.0):
-    """Un livello di concorrenza: N richieste in parallelo, watt campionati."""
-    time.sleep(settle)  # lascia decadere il carico precedente
+def run_concurrency(base_url, model, conc, max_tokens,
+                    duration_s=90.0, settle=20.0, ramp_skip_s=25.0):
+    """Carico SOSTENUTO a concorrenza fissa per duration_s secondi.
+
+    Una singola ondata di richieste dura pochi secondi e il sensore di
+    potenza non fa in tempo ad accorgersene. Qui si tengono conc slot
+    sempre occupati finche' non scade il tempo.
+    """
+    time.sleep(settle)  # attende il decadimento del carico precedente
     sampler = PowerSampler(interval=0.25)
     sampler.start()
+
+    results = []
     t0 = time.perf_counter()
     with ThreadPoolExecutor(max_workers=conc) as ex:
-        futures = [
-            ex.submit(stream_one, base_url, model, PROMPT, max_tokens)
-            for _ in range(conc)
-        ]
-        results = [f.result() for f in futures]
+        while time.perf_counter() - t0 < duration_s:
+            futures = [
+                ex.submit(stream_one, base_url, model, PROMPT, max_tokens)
+                for _ in range(conc)
+            ]
+            results.extend(f.result() for f in futures)
     wall = time.perf_counter() - t0
     sampler.stop()
-    power = sampler.stats()
+    power = sampler.stats(skip_initial_s=ramp_skip_s)
 
     ok = [r for r in results if r.get("ok")]
     failed = len(results) - len(ok)
@@ -351,6 +374,8 @@ def run_concurrency(base_url, model, conc, max_tokens, settle=3.0):
 
     return {
         "concurrency": conc,
+        "duration_s_target": duration_s,
+        "waves": len(results) // conc if conc else 0,
         "requests_ok": len(ok),
         "requests_failed": failed,
         "wall_s": round(wall, 3),
@@ -469,6 +494,11 @@ def main():
     ap.add_argument("--max-tokens", type=int, default=256)
     ap.add_argument("--eur-per-kwh", type=float, default=0.25,
                     help="tariffa elettrica; default indicativo Italia")
+    ap.add_argument("--duration-s", type=float, default=90.0,
+                    help="carico sostenuto per livello. Sotto i 60s il "
+                         "sensore di potenza non fa in tempo a reagire.")
+    ap.add_argument("--ramp-skip-s", type=float, default=25.0,
+                    help="secondi iniziali scartati (rampa del sensore)")
     ap.add_argument("--out", default="proofs")
     ap.add_argument("--fake-power", action="store_true",
                     help="DRY-RUN locale: watt simulati, output NON valido "
@@ -502,13 +532,14 @@ def main():
         return 3
     print("[*] Server pronto.")
 
-    # baseline idle: senza questo i numeri a bassa concorrenza sono gonfiati
-    print("[*] Baseline idle (20s, non toccare nulla)...")
+    # baseline idle: senza questo i numeri a bassa concorrenza sono gonfiati.
+    # 40s perche' il sensore ha una finestra di media lunga.
+    print("[*] Baseline idle (40s, non toccare nulla)...")
     idle_sampler = PowerSampler(interval=0.25)
     idle_sampler.start()
-    time.sleep(20)
+    time.sleep(40)
     idle_sampler.stop()
-    idle_stats = idle_sampler.stats()
+    idle_stats = idle_sampler.stats(skip_initial_s=10.0)
     idle_w = idle_stats.get("avg_w") or 0.0
     print(f"    idle medio: {idle_w} W")
 
@@ -518,14 +549,17 @@ def main():
 
     runs = []
     for conc in [int(c) for c in args.concurrency.split(",")]:
-        print(f"[*] Concorrenza {conc} ...", flush=True)
-        r = run_concurrency(args.base_url, args.model, conc, args.max_tokens)
+        print(f"[*] Concorrenza {conc} "
+              f"({args.duration_s:.0f}s sostenuti) ...", flush=True)
+        r = run_concurrency(args.base_url, args.model, conc, args.max_tokens,
+                            duration_s=args.duration_s,
+                            ramp_skip_s=args.ramp_skip_s)
         r = add_cost(r, args.eur_per_kwh, idle_w)
         runs.append(r)
         p = r.get("power") or {}
         c = r.get("cost") or {}
         print(f"    sistema {r['system_tok_s']} tok/s | "
-              f"{p.get('avg_w')} W | "
+              f"{p.get('avg_w')} W (picco {p.get('peak_w')}) | "
               f"EUR/1M tok {c.get('eur_per_1m_tokens_gross')}")
 
     payload = {
