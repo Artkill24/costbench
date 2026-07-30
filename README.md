@@ -1,21 +1,77 @@
 # costbench
 
-**On-prem tokens are not free. They cost watts. We measured how many.**
+**On-prem AI agents have no invoice. costbench gives them one — priced in
+joules measured on the card that ran the work.**
 
-An on-premises LLM agent with a cost-governance gateway, where every euro
-reported comes from a **tokens-per-joule curve measured on this hardware** —
-not from a price list, not from a model.
+A private AI agent, a cost-governance gateway, and the benchmark that makes
+the gateway's numbers real. All local, all on AMD Radeon, zero egress.
 
 `AMD AI DevMaster · Track 2: Agentic AI` · `AMD Radeon PRO W7900 (gfx1100)` ·
 `ROCm 7.2.1 · llama.cpp HIP` · `egress: on-prem only`
 
-Every number below is tagged **measured** and reproducible from
-[`proofs/`](proofs/). One measurement was rejected as invalid and is kept,
-with its post-mortem, in [`rejected/`](rejected/).
+---
+
+## What it does
+
+An agent reads files, plans across steps, answers — and then tells you
+exactly what that cost:
+
+```
+3 steps · 194 tokens · 404.2 J · EUR 0.000028 · 0 bytes left the network
+```
+
+Every one of those figures is derived from a **measurement of this GPU**,
+not a price list, and the zero is verified against an audit ledger rather
+than asserted in prose.
+
+Three situations where that matters:
+
+**Regulated deployment.** A legal or clinical team runs an assistant on
+documents that must not leave the building. `X-Privacy: strict` routes
+locally regardless of load, latency budget, or whether a cloud provider is
+even configured — and every request, its route, its reason and its egress
+land in a local SQLite ledger you can export and hand to an auditor.
+
+**Internal chargeback.** One GPU, several departments, no invoice to split.
+costbench meters per-tenant tokens and converts them to joules and euros
+using a curve measured on that specific card, so the allocation is
+defensible instead of arbitrary.
+
+**Scheduling decisions.** Serve now, or queue and batch? costbench measured
+the actual trade-off on this hardware: batching to 16 concurrent requests
+cuts energy per token by 88% and raises time-to-first-token 7.8×. That's a
+policy input, and it's a measurement.
+
+---
+
+## Inference performance on AMD Radeon
+
+Measured on a single Radeon PRO W7900, llama.cpp with the HIP backend, all
+layers offloaded, continuous batching enabled.
+
+| | Qwen2.5-Coder-7B Q4_K_M | Qwen2.5-Coder-14B Q4_K_M |
+|:--|---:|---:|
+| **Peak sustained throughput** | **696.3 tok/s** | **411.6 tok/s** |
+| Single-stream throughput | 103.1 tok/s | 57.3 tok/s |
+| **Throughput gain from batching** | **6.75×** | **7.19×** |
+| Time to first token (single stream) | 25 ms | 56 ms |
+| Peak power | 229 W | 237 W |
+
+Both models run entirely locally in the W7900's 51.5 GB, with a 32k context
+across 4 agent slots. Sustained 90-second runs, closed-loop load, achieved
+concurrency verified per run.
+
+The optimisation that dominates on this hardware is **batch scheduling**, and
+its magnitude was unknown until measured — which is what the rest of this
+repository is about.
 
 ---
 
 ## Two findings
+
+Every number below is tagged **measured** and reproducible from
+[`proofs/`](proofs/). One measurement was rejected as invalid and is kept,
+with its post-mortem, in [`rejected/`](rejected/).
 
 ### 1. Batching buys 8.7× energy efficiency — and the factor does not depend on the model
 
@@ -39,9 +95,9 @@ lie on top of each other.
 | 16 | 4.142 | 2.229 | 0.54 |
 
 Double the weights, roughly half the efficiency, at every concurrency level.
-This is the signature of a **memory-bandwidth-bound decode**: each token
-re-reads the full weight set from GDDR6, so doubling the weights halves the
-tokens you get per joule.
+The signature of a **memory-bandwidth-bound decode**: each token re-reads the
+full weight set from GDDR6, so doubling the weights halves the tokens you get
+per joule.
 
 ### And power is not monotonic in batch size
 
@@ -51,9 +107,9 @@ tokens you get per joule.
 | 4 | **229.0 W** | **236.9 W** |
 | 16 | 168.1 W | 184.7 W |
 
-Both models peak at concurrency 4 and then draw **less** power at
-concurrency 16 while doing ~6.8× the work. Reproduced across models, across
-four independent sessions, with achieved concurrency verified per run.
+Both models peak at concurrency 4, then draw **less** power at concurrency 16
+while doing ~6.8× the work. Reproduced across models and four independent
+sessions.
 
 ---
 
@@ -68,8 +124,7 @@ Energy is not free money. It is bought with latency.
 
 ![cost vs latency](charts/03_cost_vs_latency_7b.png)
 
-Scheduling that trade-off is exactly the job of a cost-governance layer,
-which is the second half of this project.
+Arbitrating that trade-off is the gateway's job.
 
 ---
 
@@ -86,37 +141,8 @@ which is the second half of this project.
 
 All values `measured`. GPU **board** power only (sysfs `power1_average`,
 PCI bus `0000:43:00.0`); excludes CPU, RAM, cooling and datacenter PUE.
-Tariff assumed 0.25 EUR/kWh — the only modeled input, and it is a
-multiplier: change it and every euro figure scales linearly.
-
----
-
-## How the measurement is made honest
-
-Four things had to be fixed before the numbers meant anything. Each failure
-is documented because each one silently produced plausible-looking data.
-
-**The power sensor lags ~18 seconds.** `power1_average` is a long-window
-moving average. Runs of 2–5 seconds finished before the sensor reacted, and
-reported 14 W under full load. Fix: sustained 90-second runs, first 25
-seconds of samples discarded.
-
-**The host has 8 GPUs; sysfs exposes all of them.** Taking the first
-readable hwmon path meant measuring somebody else's card. Fix: resolve the
-assigned GPU by PCI bus via `rocm-smi --showbus`, then read only that card's
-hwmon. The resolved bus and paths are recorded in every result file.
-
-**Wave-barrier load generation deflates power at high batch.** Firing N
-requests and waiting for all of them leaves the GPU partly idle during the
-straggler tail, and the tail grows with N. Fix: closed-loop load keeping
-exactly N requests in flight, with the achieved concurrency measured and
-recorded (`achieved_concurrency`) as a validity check.
-
-**A stale server on the port makes you measure the wrong model.** A liveness
-check answered by a leftover process caused a "14B" benchmark that actually
-re-measured the 7B — caught because throughput matched the 7B to one decimal
-place. Fix: free the port, then verify the *served model name*, not just that
-something answers. See [`rejected/README.md`](rejected/README.md).
+Tariff assumed 0.25 EUR/kWh — the only modeled input, and a linear
+multiplier on every euro figure.
 
 ---
 
@@ -141,17 +167,17 @@ things.
 
 `cost_model_source` is the point: every euro traces back to a measurement
 file in this repository. And because the cost depends on the concurrency at
-the moment of the request, the *same* request costs 8.7× less when it
-arrives while the GPU is already busy. That is the only honest way to meter
-on-prem inference.
+the moment of the request, the *same* request costs 8.7× less when it arrives
+while the GPU is already busy. That is the only honest way to meter on-prem
+inference.
 
 **Enforces privacy routing.** `X-Privacy: strict` is a constraint, not a
-preference: it stays local regardless of queue depth, latency budget, or
-whether an external provider is configured.
+preference: local regardless of queue depth, latency budget, or configured
+providers.
 
 **Writes a local audit log.** SQLite, on-prem, one row per request with
 route, reason, tokens, joules, euros and egress. The air-gap claim is not
-written in prose — it is [`proofs/audit_export_*.json`](proofs/), where
+prose — it is [`proofs/audit_export_*.json`](proofs/), where
 `external_egress` is `0` across every session.
 
 ---
@@ -159,9 +185,10 @@ written in prose — it is [`proofs/audit_export_*.json`](proofs/), where
 ## The agent
 
 `agent.py` — tool invocation, multi-step planning, filesystem confined to a
-sandbox root. Actions are constrained by JSON schema, so llama.cpp converts
-the schema to a GBNF grammar and the model **cannot** emit a malformed
-action; the format is imposed at sampling, not requested in the prompt.
+sandbox root. Actions are constrained by JSON schema, which llama.cpp
+compiles to a GBNF grammar, so the model **cannot** emit a malformed action:
+the format is imposed at sampling, not requested in the prompt. That is what
+makes a small, fast, fully local model usable as an agent.
 
 A recorded run ([`proofs/video_take_20260730T112143Z.txt`](proofs/)):
 
@@ -179,49 +206,81 @@ A recorded run ([`proofs/video_take_20260730T112143Z.txt`](proofs/)):
 3 steps · 194 tokens · 404.2 J · EUR 0.000028 · 0 bytes left the network
 ```
 
-Escaping the sandbox is denied, not merely discouraged: `../` and absolute
-paths raise before any read.
+Escaping the sandbox is denied, not discouraged: `../` and absolute paths
+raise before any read. Repeated identical tool calls are detected and
+reported back to the model instead of silently consuming the step budget.
+
+---
+
+## How the measurement is made honest
+
+Four things had to be fixed before the numbers meant anything. Each failure
+produced plausible-looking data, which is why they are documented rather than
+quietly corrected.
+
+**The power sensor lags ~18 seconds.** `power1_average` is a long-window
+moving average. Runs of 2–5 seconds finished before the sensor reacted and
+reported 14 W under full load. Fix: sustained 90-second runs, first 25
+seconds of samples discarded.
+
+**The host has 8 GPUs; sysfs exposes all of them.** Taking the first readable
+hwmon path meant measuring somebody else's card. Fix: resolve the assigned
+GPU by PCI bus via `rocm-smi --showbus`, then read only that card's hwmon.
+The resolved bus and paths are recorded in every result file.
+
+**Wave-barrier load generation deflates power at high batch.** Firing N
+requests and waiting for all of them leaves the GPU partly idle during the
+straggler tail, and the tail grows with N. Fix: closed-loop load keeping
+exactly N requests in flight, with `achieved_concurrency` measured and
+recorded as a validity check.
+
+**A stale server on the port makes you measure the wrong model.** A liveness
+check answered by a leftover process caused a "14B" benchmark that actually
+re-measured the 7B — caught because throughput matched the 7B to one decimal
+place. Fix: free the port, then verify the *served model name*, not just that
+something answers. See [`rejected/README.md`](rejected/README.md).
 
 ---
 
 ## Limits
 
-- **Board power only.** Real operating cost is higher: CPU, RAM, cooling and
-  datacenter PUE are excluded, as is hardware amortisation.
+- **Board power only.** Real operating cost is higher: CPU, RAM, cooling,
+  datacenter PUE and hardware amortisation are excluded.
 - **The cause of the power drop is hypothesised, not proven.** Memory-bound
   decode is consistent with the 0.53× cross-model ratio, but clock probing
   could not confirm it: `mclk` sits pinned at 1124 MHz at every concurrency
-  level, so clocks carry no information about memory *traffic*. Raw probe
-  data in [`proofs/clockprobe_*.csv`](proofs/). Settling this needs bandwidth
-  counters, not clocks.
+  level, so clocks carry no information about memory *traffic*. Raw data in
+  [`proofs/clockprobe_*.csv`](proofs/). Settling this needs bandwidth
+  counters.
 - **Token counting approximates one streaming chunk as one token.**
-- **Three concurrency levels** (1, 4, 16), single GPU, single quantisation
-  (Q4_K_M).
+- **Three concurrency levels** (1, 4, 16), single GPU, single quantisation.
 - **The electricity tariff is assumed**, not measured.
 
 ---
 
-## Reproduce
+## Run it
 
 ```bash
 git clone https://github.com/Artkill24/costbench && cd costbench
 
-# full unattended benchmark session on an AMD GPU
 bash setup.sh          # builds llama.cpp with HIP, fetches the model, measures
-
-# gateway + agent + audit export
-bash demo.sh
-
-# figures and results table from proofs/
+bash demo.sh           # gateway + agent + audit export
 python3 charts.py --proofs proofs/ --out charts/
 ```
 
-`setup.sh` aborts in the first two minutes if power telemetry is
-unavailable, rather than burning a GPU hour to produce nothing.
+**Requirements.** AMD GPU with ROCm 6+ and readable `power1_average`
+telemetry; Python 3.12; `cmake`, `build-essential`, `git`.
+Python packages: `fastapi`, `uvicorn`, `httpx` (gateway), `huggingface_hub`
+(model download), `matplotlib` (figures). `costbench.py` and `agent.py` use
+only the standard library, deliberately — the measurement path has no
+third-party surface.
 
-Environment captured in every result file: driver 6.16.13, ROCm 7.2.1,
-HIP 7.2.53211, AMD Radeon PRO W7900 (VBIOS 113-D7070910-100, 241 W cap,
-51.5 GB), AMD EPYC 9334 host.
+`setup.sh` aborts within two minutes if power telemetry is unavailable,
+rather than burning a GPU hour to produce nothing.
+
+Environment captured in every result file: driver 6.16.13, ROCm 7.2.1, HIP
+7.2.53211, AMD Radeon PRO W7900 (VBIOS 113-D7070910-100, 241 W cap, 51.5 GB),
+AMD EPYC 9334 host.
 
 ---
 
@@ -229,13 +288,14 @@ HIP 7.2.53211, AMD Radeon PRO W7900 (VBIOS 113-D7070910-100, 241 W cap,
 
 | | |
 |:--|:--|
-| `costbench.py` | energy-per-token benchmark; PCI-resolved sensor, closed-loop load |
-| `gateway.py` | OpenAI-compatible cost-governance gateway |
 | `agent.py` | sandboxed on-prem agent with per-task energy accounting |
+| `gateway.py` | OpenAI-compatible cost-governance gateway |
+| `costbench.py` | energy-per-token benchmark; PCI-resolved sensor, closed-loop load |
 | `charts.py` | figures and results table from `proofs/` |
 | `setup.sh` / `demo.sh` | unattended GPU sessions |
 | `clockprobe.sh` | clock/power probe (hypothesis test, inconclusive) |
 | `mock_upstream.py` | **fake** server for wiring tests — produces no measurements |
+| `SPECIFICATION.md` | Track 2 project specification |
 | `proofs/` | raw results, logs, audit exports, checksums |
 | `rejected/` | invalidated measurement and post-mortem |
 
