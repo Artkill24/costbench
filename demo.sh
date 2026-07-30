@@ -39,18 +39,47 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-start_llama() {   # $1 = path modello, $2 = etichetta
-    [ -n "$SRV_PID" ] && { kill "$SRV_PID" 2>/dev/null; wait "$SRV_PID" 2>/dev/null; sleep 20; }
-    log "avvio llama-server: $2"
-    "$SERVER" -m "$1" --host 127.0.0.1 --port "$LLAMA_PORT" \
-        -ngl 99 -c 8192 -np 16 -cb > "$PROOFS/srv_${2}_$STAMP.log" 2>&1 &
+start_llama() {   # $1 = path modello, $2 = etichetta, $3 = slot paralleli
+    local model="$1" tag="$2" slots="${3:-16}"
+    local want; want=$(basename "$model")
+
+    # 1. LIBERA LA PORTA. Un server zombie che risponde ancora fa passare
+    #    il controllo di prontezza e ti fa misurare il modello sbagliato.
+    [ -n "$SRV_PID" ] && { kill "$SRV_PID" 2>/dev/null; wait "$SRV_PID" 2>/dev/null; }
+    pkill -f "llama-server.*--port $LLAMA_PORT" 2>/dev/null
+    SRV_PID=""
+    for _ in $(seq 1 30); do
+        curl -sf --max-time 2 "http://127.0.0.1:$LLAMA_PORT/v1/models" >/dev/null 2>&1 || break
+        sleep 2
+    done
+    curl -sf --max-time 2 "http://127.0.0.1:$LLAMA_PORT/v1/models" >/dev/null 2>&1 \
+        && fail "porta $LLAMA_PORT ancora occupata da un altro processo"
+    sleep 5
+
+    # 2. llama.cpp DIVIDE -c tra gli slot: con -c 8192 -np 16 ogni richiesta
+    #    ha 512 token e l'agente viene troncato a meta' JSON.
+    local ctx=$(( 8192 * slots ))
+    log "avvio llama-server: $tag ($want, slot=$slots, $((ctx/slots)) tok/slot)"
+    "$SERVER" -m "$model" --host 127.0.0.1 --port "$LLAMA_PORT" \
+        -ngl 99 -c "$ctx" -np "$slots" -cb > "$PROOFS/srv_${tag}_$STAMP.log" 2>&1 &
     SRV_PID=$!
+
     for _ in $(seq 1 60); do
-        curl -sf "http://127.0.0.1:$LLAMA_PORT/v1/models" >/dev/null 2>&1 && return 0
-        kill -0 "$SRV_PID" 2>/dev/null || fail "server morto: proofs/srv_${2}_$STAMP.log"
+        curl -sf --max-time 3 "http://127.0.0.1:$LLAMA_PORT/v1/models" >/dev/null 2>&1 && break
+        kill -0 "$SRV_PID" 2>/dev/null || fail "server morto: proofs/srv_${tag}_$STAMP.log"
         sleep 5
     done
-    fail "server non risponde entro 5 min"
+    kill -0 "$SRV_PID" 2>/dev/null || fail "server morto: proofs/srv_${tag}_$STAMP.log"
+
+    # 3. VERIFICA CHE SIA IL MODELLO GIUSTO, non solo che qualcuno risponda.
+    local served; served=$(curl -sf --max-time 5 \
+        "http://127.0.0.1:$LLAMA_PORT/v1/models" 2>/dev/null | tr -d ' \n')
+    case "$served" in
+        *"$want"*) log "  modello confermato: $want" ;;
+        *) fail "il server sulla porta $LLAMA_PORT NON serve $want.
+   Risposta /v1/models: ${served:0:300}
+   Misurare cosi' produce dati falsi. Interrompo." ;;
+    esac
 }
 
 # ---------------------------------------------------------------- preflight
@@ -67,7 +96,7 @@ python3 costbench.py --preflight 2>&1 | grep -E "Backend potenza|Bus PCI|Directo
 
 # ============================================================== FASE A
 log "FASE A - agente sul 7B MISURATO (coerente col cost model)"
-start_llama "$MODEL_7B" "7b"
+start_llama "$MODEL_7B" "7b" 4
 
 python3 gateway.py --upstream "http://127.0.0.1:$LLAMA_PORT" \
     --port "$GW_PORT" --db "$PROOFS/audit_$STAMP.sqlite" \
@@ -81,9 +110,9 @@ curl -sf "http://127.0.0.1:$GW_PORT/healthz" >/dev/null || fail "gateway non par
 curl -s "http://127.0.0.1:$GW_PORT/healthz" | python3 -m json.tool
 
 TASKS=(
-  "Leggi la cartella proofs/ e dimmi a quale concorrenza il rapporto token per joule e' migliore. Cita il nome del file da cui hai preso il dato."
-  "Quale GPU e' stata usata per le misure e qual e' il suo limite di potenza? Cita il file."
-  "Confronta il costo in euro per milione di token tra concorrenza 1 e concorrenza 16. Cita il file."
+  "In the proofs/ directory, find the measured throughput and power for each concurrency level, then say which concurrency gives the best tokens-per-joule ratio. Cite the exact filename you used."
+  "Which GPU was used for the measurements, and what is its Max Graphics Package Power? Cite the exact filename."
+  "Compare eur_per_1m_tokens_gross between concurrency 1 and concurrency 16. Cite the exact filename."
 )
 
 i=0
@@ -121,7 +150,7 @@ log "FASE B - registrazione per il video (una passata pulita)"
   timeout 600 python3 agent.py \
       --root "$ROOT" --gateway "http://127.0.0.1:$GW_PORT" \
       --max-steps 6 --tenant "video" --privacy strict \
-      --task "Leggi proofs/ e dimmi a quale concorrenza il rapporto token per joule e' migliore, citando il file."
+      --task "In proofs/, find which concurrency gives the best tokens-per-joule ratio. Cite the exact filename."
 } 2>&1 | tee "$PROOFS/video_take_$STAMP.txt"
 
 # ============================================================== FASE C
@@ -141,7 +170,7 @@ PY
     fi
     if [ -f "$M14" ]; then
         kill "$GW_PID" 2>/dev/null; wait "$GW_PID" 2>/dev/null; GW_PID=""
-        start_llama "$M14" "14b"
+        start_llama "$M14" "14b" 16
         python3 costbench.py --label qwen14b-q4km-closedloop \
             --base-url "http://127.0.0.1:$LLAMA_PORT" \
             --concurrency 1,4,16 --duration-s 90 --out "$PROOFS" \

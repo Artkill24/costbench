@@ -131,9 +131,36 @@ When you have enough information, reply with EXACTLY:
 
 Rules:
 - One JSON object per reply. No prose outside the JSON. No markdown fences.
+- Paths are RELATIVE to the workspace root shown below. Absolute paths
+  like /var/log or /opt are outside the sandbox and will be DENIED.
+- `grep` takes a REGEX matched against file CONTENTS, and `path` must be
+  a real directory or file, not a wildcard. Search for short identifiers
+  that literally appear in the data (e.g. tokens_per_joule, avg_w), not
+  for whole sentences.
+- The data files are JSON with English field names. Search in English.
 - Never invent file contents. If you did not read it, say so.
-- Prefer list_files or grep before read_file, to avoid reading blindly.
 """
+
+
+def workspace_overview(sb, max_entries=60):
+    """Il modello non puo' indovinare la struttura: gliela diamo.
+
+    Senza questo un 7B tenta /var/log, /opt/logs, /usr/local/logs e
+    brucia tutti i passi disponibili in percorsi inesistenti.
+    """
+    entries = []
+    for dirpath, dirnames, filenames in os.walk(sb.root):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        rel_dir = os.path.relpath(dirpath, sb.root)
+        if rel_dir.count(os.sep) > 1:
+            dirnames[:] = []
+            continue
+        for fn in sorted(filenames):
+            rel = os.path.relpath(os.path.join(dirpath, fn), sb.root)
+            entries.append(rel)
+            if len(entries) >= max_entries:
+                return sorted(entries)
+    return sorted(entries)
 
 
 # ==========================================================================
@@ -274,11 +301,20 @@ def parse_action(text):
 
 
 def run(task, sb, client, max_steps, verbose=True):
+    overview = workspace_overview(sb)
+    opening = (
+        f"Workspace root: {sb.root}\n"
+        f"Files available (paths are relative to this root):\n"
+        + "\n".join(f"  {e}" for e in overview)
+        + f"\n\nTask: {task}"
+    )
     messages = [{"role": "system", "content": SYSTEM},
-                {"role": "user", "content": f"Task: {task}"}]
+                {"role": "user", "content": opening}]
     trace = []
     answer = None
     t0 = time.perf_counter()
+    if verbose:
+        print(f"  workspace: {len(overview)} file elencati al modello")
 
     for step in range(1, max_steps + 1):
         content, cost, dec = client.chat(messages)
