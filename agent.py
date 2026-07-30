@@ -37,7 +37,10 @@ import urllib.request
 # ==========================================================================
 
 MAX_READ_BYTES = 20_000
-SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "build"}
+# 'rejected' contiene misure dichiarate invalide: l'agente non deve
+# vederle, altrimenti le cita come fonte e la demo mostra dati falsi.
+SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "build",
+             "rejected"}
 
 
 class Sandbox:
@@ -312,6 +315,8 @@ def run(task, sb, client, max_steps, verbose=True):
                 {"role": "user", "content": opening}]
     trace = []
     answer = None
+    seen_calls = {}
+    loops = 0
     t0 = time.perf_counter()
     if verbose:
         print(f"  workspace: {len(overview)} file elencati al modello")
@@ -344,6 +349,32 @@ def run(task, sb, client, max_steps, verbose=True):
 
         name = action.get("tool")
         args = action.get("args") or {}
+        sig = json.dumps({"t": name, "a": args}, sort_keys=True)
+
+        if sig in seen_calls:
+            # senza questo un 7B ripete la stessa grep fino a esaurire
+            # il budget di passi. Non e' un errore del tool: e' che il
+            # modello non registra di averlo gia' fatto.
+            obs = (f"LOOP DETECTED: you already called {name} with exactly "
+                   f"these arguments at step {seen_calls[sig]} and got the "
+                   f"same result. Do not repeat it. Either use a DIFFERENT "
+                   f"tool or different arguments, or answer now with "
+                   f'{{"answer": "..."}} based on what you have already read.')
+            if verbose:
+                print(f"  tool: {name}({args}) -> LOOP, gia' fatto al passo "
+                      f"{seen_calls[sig]}")
+            trace.append({"step": step, "kind": "loop", "tool": name,
+                          "args": args, "first_seen": seen_calls[sig]})
+            messages.append({"role": "assistant", "content": content})
+            messages.append({"role": "user", "content": obs})
+            loops += 1
+            if loops >= 2:
+                answer = ("(interrotto: il modello ripete la stessa azione "
+                          "senza progredire)")
+                break
+            continue
+
+        seen_calls[sig] = step
         if name not in TOOLS:
             obs = f"ERRORE: tool sconosciuto '{name}'. Disponibili: {list(TOOLS)}"
         else:
