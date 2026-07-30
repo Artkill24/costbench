@@ -1,0 +1,45 @@
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+  workspace: 60 file elencati al modello
+
+[1;36m[passo 1][0m 57 tok · 118.8 J · €0.00000825 · route=local egress=none
+  tool: grep({'pattern': 'Max Graphics Package Power', 'path': 'rejected/costbench_qwen14b-q4km-closedloop_20260730T110028Z.json'}) -> 269 caratteri
+
+[1;36m[passo 2][0m 57 tok · 118.8 J · €0.00000825 · route=local egress=none
+  tool: grep({'pattern': 'Max Graphics Package Power', 'path': 'rejected/costbench_qwen14b-q4km-closedloop_20260730T110028Z.json'}) -> 269 caratteri
+
+[1;36m[passo 3][0m 57 tok · 118.8 J · €0.00000825 · route=local egress=none
+  tool: grep({'pattern': 'Max Graphics Package Power', 'path': 'rejected/costbench_qwen14b-q4km-closedloop_20260730T110028Z.json'}) -> 269 caratteri
+
+[1;36m[passo 4][0m 57 tok · 118.8 J · €0.00000825 · route=local egress=none
+  tool: grep({'pattern': 'Max Graphics Package Power', 'path': 'rejected/costbench_qwen14b-q4km-closedloop_20260730T110028Z.json'}) -> 269 caratteri
+
+[1;36m[passo 5][0m 57 tok · 118.8 J · €0.00000825 · route=local egress=none
+  tool: grep({'pattern': 'Max Graphics Package Power', 'path': 'rejected/costbench_qwen14b-q4km-closedloop_20260730T110028Z.json'}) -> 269 caratteri
+
+[1;36m[passo 6][0m 57 tok · 118.8 J · €0.00000825 · route=local egress=none
+  tool: grep({'pattern': 'Max Graphics Package Power', 'path': 'rejected/costbench_qwen14b-q4km-closedloop_20260730T110028Z.json'}) -> 269 caratteri
+
+==============================================================
+RISPOSTA
+==============================================================
+(budget di passi esaurito senza risposta finale)
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 6
+  chiamate al modello   : 6
+  token generati        : 342
+  energia               : 712.5 J (1.979e-04 kWh)
+  costo elettrico       : EUR 0.00004950
+  durata                : 3.87 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 9 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
+
+trace scritto in /workspace/template-repos/template-890/repo/proofs/agent_trace_2_20260730T110916Z.json

@@ -1,0 +1,33 @@
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+  workspace: 60 file elencati al modello
+
+[1;36m[passo 1][0m 39 tok · 81.2 J · €0.00000564 · route=local egress=none
+  tool: grep({'pattern': 'Max Graphics Package Power', 'path': 'llama.cpp/.devops/cuda.Dockerfile'}) -> 20 caratteri
+
+[1;36m[passo 2][0m 26 tok · 54.2 J · €0.00000376 · route=local egress=none
+  risposta finale ricevuta.
+
+==============================================================
+RISPOSTA
+==============================================================
+No information found about the GPU used for measurements or its Max Graphics Package Power in the provided files.
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 2
+  chiamate al modello   : 2
+  token generati        : 65
+  energia               : 135.4 J (3.762e-05 kWh)
+  costo elettrico       : EUR 0.00000940
+  durata                : 0.81 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 6 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
+
+trace scritto in /workspace/template-repos/template-890/repo/proofs/agent_trace_2_20260730T112143Z.json

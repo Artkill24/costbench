@@ -1,0 +1,36 @@
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+  workspace: 60 file elencati al modello
+
+[1;36m[passo 1][0m 37 tok · 77.1 J · €0.00000535 · route=local egress=none
+  tool: list_files({'path': 'proofs/', 'pattern': '*.txt'}) -> 302 caratteri
+
+[1;36m[passo 2][0m 59 tok · 122.9 J · €0.00000854 · route=local egress=none
+  tool: read_file({'path': 'proofs/agent_run_1_20260730T104719Z.txt', 'max_lines': 100}) -> 1801 caratteri
+
+[1;36m[passo 3][0m 17 tok · 35.4 J · €0.00000246 · route=local egress=none
+  risposta finale ricevuta.
+
+==============================================================
+RISPOSTA
+==============================================================
+Nessuna risposta interpretabile.
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 3
+  chiamate al modello   : 3
+  token generati        : 113
+  energia               : 235.4 J (6.539e-05 kWh)
+  costo elettrico       : EUR 0.00001635
+  durata                : 1.98 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 3 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
+
+trace scritto in /workspace/template-repos/template-890/repo/proofs/agent_trace_1_20260730T110916Z.json

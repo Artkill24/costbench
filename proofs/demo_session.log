@@ -1,0 +1,251 @@
+
+[1;36m[10:47:19] PREFLIGHT[0m
+
+[1;36m[10:47:19] installo dipendenze del gateway[0m
+[1] Backend potenza : sysfs
+    Bus PCI GPU assegnata : 0000:43:00.0
+    Directory scheda      : /sys/class/drm/card3/device
+
+[1;36m[10:47:26] FASE A - agente sul 7B MISURATO (coerente col cost model)[0m
+
+[1;36m[10:47:26] avvio llama-server: 7b[0m
+{
+    "gateway": "ok",
+    "upstream_reachable": true,
+    "inflight": 0,
+    "cost_model_source": "costbench_qwen7b-q4km-v3-closedloop_20260729T222700Z.json (W7900 gfx1100, closed-loop, achieved concurrency verified)"
+}
+
+[1;36m[10:47:28] task 1/3[0m
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+
+[1;36m[passo 1][0m 37 tok · 77.1 J · €0.00000535 · route=local egress=none
+  tool: list_files({'path': 'proofs/', 'pattern': '*.txt'}) -> 143 caratteri
+
+[1;36m[passo 2][0m 58 tok · 120.8 J · €0.00000839 · route=local egress=none
+  tool: read_file({'path': 'proofs/agent_run_1_20260730T104719Z.txt', 'max_lines': 10}) -> 0 caratteri
+
+[1;36m[passo 3][0m 40 tok · 83.3 J · €0.00000579 · route=local egress=none
+  tool: grep({'pattern': 'concorrenza rapporto token joule', 'path': 'proofs/'}) -> 20 caratteri
+
+[1;36m[passo 4][0m 0 tok · 0.0 J · €0.00000000 · route=local egress=none
+  output non interpretabile come azione, mi fermo.
+  grezzo: 
+
+==============================================================
+RISPOSTA
+==============================================================
+(nessuna risposta interpretabile)
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 4
+  chiamate al modello   : 4
+  token generati        : 135
+  energia               : 281.2 J (7.812e-05 kWh)
+  costo elettrico       : EUR 0.00001953
+  durata                : 1.78 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 4 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
+
+trace scritto in /workspace/template-repos/template-890/repo/proofs/agent_trace_1_20260730T104719Z.json
+
+[1;36m[10:47:30] task 2/3[0m
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+
+[1;36m[passo 1][0m 40 tok · 83.3 J · €0.00000579 · route=local egress=none
+  tool: list_files({'path': '/path/to/logs', 'pattern': 'gpu_info.txt'}) -> 45 caratteri
+
+[1;36m[passo 2][0m 35 tok · 72.9 J · €0.00000506 · route=local egress=none
+  tool: list_files({'path': '/var/log', 'pattern': 'gpu_info.txt'}) -> 40 caratteri
+
+[1;36m[passo 3][0m 36 tok · 75.0 J · €0.00000521 · route=local egress=none
+  tool: list_files({'path': '/home/user/logs', 'pattern': 'gpu_info.txt'}) -> 47 caratteri
+
+[1;36m[passo 4][0m 35 tok · 72.9 J · €0.00000506 · route=local egress=none
+  tool: list_files({'path': '/opt/logs', 'pattern': 'gpu_info.txt'}) -> 41 caratteri
+
+[1;36m[passo 5][0m 33 tok · 68.8 J · €0.00000477 · route=local egress=none
+  output non interpretabile come azione, mi fermo.
+  grezzo: {
+  "tool": "list_files",
+  "args": {
+    "path": "/usr/local/logs",
+    "pattern": "gpu_info.txt"
+ 
+
+==============================================================
+RISPOSTA
+==============================================================
+{
+  "tool": "list_files",
+  "args": {
+    "path": "/usr/local/logs",
+    "pattern": "gpu_info.txt"
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 5
+  chiamate al modello   : 5
+  token generati        : 179
+  energia               : 372.9 J (1.036e-04 kWh)
+  costo elettrico       : EUR 0.00002589
+  durata                : 2.01 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 9 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
+
+trace scritto in /workspace/template-repos/template-890/repo/proofs/agent_trace_2_20260730T104719Z.json
+
+[1;36m[10:47:32] task 3/3[0m
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+
+[1;36m[passo 1][0m 25 tok · 52.1 J · €0.00000362 · route=local egress=none
+  tool: list_files({'path': '.', 'pattern': '*.csv'}) -> 419 caratteri
+
+[1;36m[passo 2][0m 42 tok · 87.5 J · €0.00000608 · route=local egress=none
+  tool: grep({'pattern': 'concorrenza 1|concorrenza 16', 'path': 'llama.cpp/docs/ops/*.csv'}) -> 20 caratteri
+
+[1;36m[passo 3][0m 9 tok · 18.8 J · €0.00000130 · route=local egress=none
+  output non interpretabile come azione, mi fermo.
+  grezzo: {"answer": "Nessuna occor
+
+==============================================================
+RISPOSTA
+==============================================================
+{"answer": "Nessuna occor
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 3
+  chiamate al modello   : 3
+  token generati        : 76
+  energia               : 158.3 J (4.398e-05 kWh)
+  costo elettrico       : EUR 0.00001100
+  durata                : 0.99 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 12 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
+
+trace scritto in /workspace/template-repos/template-890/repo/proofs/agent_trace_3_20260730T104719Z.json
+
+[1;36m[10:47:33] usage aggregato del tenant demo[0m
+{
+    "requests": 12,
+    "tokens": 390,
+    "energy_joules": 812.5,
+    "energy_kwh": 0.00022569,
+    "cost_eur": 5.6e-05,
+    "requests_with_external_egress": 0,
+    "cost_model_source": "costbench_qwen7b-q4km-v3-closedloop_20260729T222700Z.json (W7900 gfx1100, closed-loop, achieved concurrency verified)",
+    "basis": "GPU board power only; excludes CPU, RAM, cooling, PUE"
+}
+
+[1;36m[10:47:33] export audit (prova che l'egress e' zero, non dichiarato)[0m
+  12 record, 0 con egress esterno
+
+[1;36m[10:47:33] FASE B - registrazione per il video (una passata pulita)[0m
+### on-prem agent, AMD Radeon PRO W7900, zero egress
+### modello: Qwen2.5-Coder-7B Q4_K_M | costo: curva token/joule misurata
+
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+
+[1;36m[passo 1][0m 28 tok · 58.3 J · €0.00000405 · route=local egress=none
+  tool: list_files({'path': 'proofs/', 'pattern': '*.txt'}) -> 262 caratteri
+
+[1;36m[passo 2][0m 28 tok · 58.3 J · €0.00000405 · route=local egress=none
+  tool: grep({'pattern': 'token per joule', 'path': 'proofs/*.txt'}) -> 20 caratteri
+
+[1;36m[passo 3][0m 25 tok · 52.1 J · €0.00000362 · route=local egress=none
+  output non interpretabile come azione, mi fermo.
+  grezzo: {"answer": "Nessuna occorrenza trovata per 'token per joule' nei file nella directory '
+
+==============================================================
+RISPOSTA
+==============================================================
+{"answer": "Nessuna occorrenza trovata per 'token per joule' nei file nella directory '
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 3
+  chiamate al modello   : 3
+  token generati        : 81
+  energia               : 168.7 J (4.687e-05 kWh)
+  costo elettrico       : EUR 0.00001172
+  durata                : 1.03 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 3 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
+
+[1;36m[10:47:34] FASE C - secondo modello: il metodo generalizza?[0m
+scaricato: /workspace/template-repos/template-890/repo/models/qwen2.5-coder-14b-instruct-q4_k_m.gguf
+
+[1;36m[10:54:08] avvio llama-server: 14b[0m
+[*] Attendo il server su http://127.0.0.1:8081 ...
+[*] Server pronto.
+[*] Baseline idle (40s, non toccare nulla)...
+    idle medio: 13.0 W
+[*] Warmup...
+[*] Concorrenza 1 (90s sostenuti) ...
+    sistema 103.1 tok/s | 216.25 W (picco 220.0) | in volo 1/1 | EUR/1M tok 0.1457
+[*] Concorrenza 4 (90s sostenuti) ...
+    sistema 216.72 tok/s | 228.59 W (picco 236.0) | in volo 4/4 | EUR/1M tok 0.0732
+[*] Concorrenza 16 (90s sostenuti) ...
+    sistema 707.89 tok/s | 169.35 W (picco 175.0) | in volo 16/16 | EUR/1M tok 0.0166
+
+[*] Scritto: /workspace/template-repos/template-890/repo/proofs/costbench_qwen14b-q4km-closedloop_20260730T110028Z.json
+[*] Scaling batching: 6.87x
+[*] Costo per token: 0.1457 -> 0.0166 EUR/1M (88.6% in meno)
+
+>>> git add proofs/ && git commit SUBITO. L'istanza puo' morire.
+
+[1;36m[11:00:28] FATTO[0m
+-rw-r--r-- 1 root root 28672 Jul 30 10:47 audit_20260730T104719Z.sqlite
+-rw-r--r-- 1 root root  8507 Jul 30 10:47 audit_export_20260730T104719Z.json
+-rw-r--r-- 1 root root   797 Jul 30 11:00 bench14b_20260730T104719Z.txt
+-rw-r--r-- 1 root root   801 Jul 29 10:44 bench_20260729T103745Z.txt
+-rw-r--r-- 1 root root   606 Jul 29 22:08 clockprobe_20260729T220628Z.csv
+-rw-r--r-- 1 root root  4281 Jul 29 22:17 clockprobe_20260729T221149Z.csv
+-rw-r--r-- 1 root root 11904 Jul 30 11:00 costbench_qwen14b-q4km-closedloop_20260730T110028Z.json
+-rw-r--r-- 1 root root 11748 Jul 29 11:01 costbench_qwen7b-q4km-v2_20260729T110143Z.json
+-rw-r--r-- 1 root root 11740 Jul 29 21:35 costbench_qwen7b-q4km-v2_20260729T213502Z.json
+-rw-r--r-- 1 root root 11893 Jul 30 10:46 costbench_qwen7b-q4km-v3-closedloop_20260729T222700Z.json
+-rw-r--r-- 1 root root 12328 Jul 29 10:44 costbench_qwen7b-q4km_20260729T104401Z.json
+-rw-r--r-- 1 root root  9754 Jul 30 11:00 demo_session.log
+-rw-r--r-- 1 root root  2252 Jul 30 10:53 gateway_20260730T104719Z.log
+-rw-r--r-- 1 root root   952 Jul 29 10:37 gpu_20260729T103745Z.txt
+-rw-r--r-- 1 root root  2312 Jul 29 10:37 preflight_20260729T103745Z.txt
+-rw-r--r-- 1 root root 37976 Jul 29 10:44 server_20260729T103745Z.log
+-rw-r--r-- 1 root root   726 Jul 30 10:54 srv_14b_20260730T104719Z.log
+-rw-r--r-- 1 root root   726 Jul 30 10:47 srv_7b_20260730T104719Z.log
+-rw-r--r-- 1 root root   331 Jul 30 10:47 usage_20260730T104719Z.json
+-rw-r--r-- 1 root root  1789 Jul 30 10:47 video_take_20260730T104719Z.txt
+
+>>> PORTA FUORI TUTTO PRIMA DI CHIUDERE L'ISTANZA:
+    cd /workspace/template-repos/template-890/repo && tar czf demo.tar.gz --exclude='srv_*.log' proofs/
+    base64 -w0 demo.tar.gz    # poi incolla in chat

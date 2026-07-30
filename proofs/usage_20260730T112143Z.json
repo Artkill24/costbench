@@ -1,0 +1,1 @@
+{"requests":8,"tokens":335,"energy_joules":697.92,"energy_kwh":0.00019387,"cost_eur":4.8e-05,"requests_with_external_egress":0,"cost_model_source":"costbench_qwen7b-q4km-v3-closedloop_20260729T222700Z.json (W7900 gfx1100, closed-loop, achieved concurrency verified)","basis":"GPU board power only; excludes CPU, RAM, cooling, PUE"}

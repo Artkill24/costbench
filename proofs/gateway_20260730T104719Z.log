@@ -1,0 +1,35 @@
+INFO:     Started server process [13713]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8090 (Press CTRL+C to quit)
+gateway -> http://127.0.0.1:8081
+audit    : /workspace/template-repos/template-890/repo/proofs/audit_20260730T104719Z.sqlite
+cloud    : DISABILITATO
+modello di costo: costbench_qwen7b-q4km-v3-closedloop_20260729T222700Z.json (W7900 gfx1100, closed-loop, achieved concurrency verified)
+INFO:     127.0.0.1:42898 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42908 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42916 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42926 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42930 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42942 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42956 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42970 - "GET /v1/usage?tenant=demo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42980 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42990 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42996 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43002 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43008 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41454 - "GET /v1/usage?tenant=demo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41466 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41478 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41492 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41508 - "GET /v1/usage?tenant=demo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41510 - "GET /v1/usage?tenant=demo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41524 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41538 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41554 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41566 - "GET /v1/usage?tenant=video HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [13713]

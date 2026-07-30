@@ -1,0 +1,33 @@
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+  workspace: 60 file elencati al modello
+
+[1;36m[passo 1][0m 44 tok · 91.7 J · €0.00000637 · route=local egress=none
+  tool: grep({'pattern': 'eur_per_1m_tokens_gross', 'path': 'llama.cpp'}) -> 20 caratteri
+
+[1;36m[passo 2][0m 22 tok · 45.8 J · €0.00000318 · route=local egress=none
+  risposta finale ricevuta.
+
+==============================================================
+RISPOSTA
+==============================================================
+eur_per_1m_tokens_gross not found in llama.cpp
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 2
+  chiamate al modello   : 2
+  token generati        : 66
+  energia               : 137.5 J (3.819e-05 kWh)
+  costo elettrico       : EUR 0.00000955
+  durata                : 1.5 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 8 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
+
+trace scritto in /workspace/template-repos/template-890/repo/proofs/agent_trace_3_20260730T112143Z.json

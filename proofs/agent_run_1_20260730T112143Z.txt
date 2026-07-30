@@ -1,0 +1,39 @@
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+  workspace: 60 file elencati al modello
+
+[1;36m[passo 1][0m 37 tok · 77.1 J · €0.00000535 · route=local egress=none
+  tool: list_files({'path': 'proofs', 'pattern': '*.txt'}) -> 498 caratteri
+
+[1;36m[passo 2][0m 59 tok · 122.9 J · €0.00000854 · route=local egress=none
+  tool: read_file({'path': 'proofs/bench14b_20260730T110916Z.txt', 'max_lines': 100}) -> 795 caratteri
+
+[1;36m[passo 3][0m 59 tok · 122.9 J · €0.00000854 · route=local egress=none
+  tool: grep({'pattern': 'tokens_per_joule', 'path': 'proofs/bench14b_20260730T110916Z.txt'}) -> 20 caratteri
+
+[1;36m[passo 4][0m 49 tok · 102.1 J · €0.00000709 · route=local egress=none
+  risposta finale ricevuta.
+
+==============================================================
+RISPOSTA
+==============================================================
+Nessun dato sulla 'tokens_per_joule' trovato nel file proofs/bench14b_20260730T110916Z.txt.
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 4
+  chiamate al modello   : 4
+  token generati        : 204
+  energia               : 425.0 J (1.181e-04 kWh)
+  costo elettrico       : EUR 0.00002952
+  durata                : 2.89 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 4 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
+
+trace scritto in /workspace/template-repos/template-890/repo/proofs/agent_trace_1_20260730T112143Z.json

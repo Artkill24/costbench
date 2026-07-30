@@ -1,0 +1,37 @@
+### on-prem agent, AMD Radeon PRO W7900, zero egress
+### modello: Qwen2.5-Coder-7B Q4_K_M | costo: curva token/joule misurata
+
+agente on-prem · root=/workspace/template-repos/template-890/repo · privacy=strict
+gateway: http://127.0.0.1:8090 · output vincolato: si (json_schema)
+
+[1;36m[passo 1][0m 28 tok · 58.3 J · €0.00000405 · route=local egress=none
+  tool: list_files({'path': 'proofs/', 'pattern': '*.txt'}) -> 262 caratteri
+
+[1;36m[passo 2][0m 28 tok · 58.3 J · €0.00000405 · route=local egress=none
+  tool: grep({'pattern': 'token per joule', 'path': 'proofs/*.txt'}) -> 20 caratteri
+
+[1;36m[passo 3][0m 25 tok · 52.1 J · €0.00000362 · route=local egress=none
+  output non interpretabile come azione, mi fermo.
+  grezzo: {"answer": "Nessuna occorrenza trovata per 'token per joule' nei file nella directory '
+
+==============================================================
+RISPOSTA
+==============================================================
+{"answer": "Nessuna occorrenza trovata per 'token per joule' nei file nella directory '
+
+==============================================================
+CONTABILITA' DEL TASK
+==============================================================
+  passi                 : 3
+  chiamate al modello   : 3
+  token generati        : 81
+  energia               : 168.7 J (4.687e-05 kWh)
+  costo elettrico       : EUR 0.00001172
+  durata                : 1.03 s
+  chiamate con egress   : 0
+  byte usciti dalla rete: 0 (verificato contro l'audit del gateway, non dichiarato)
+  audit tenant totale   : 3 richieste, 0 con egress esterno
+
+  Il costo deriva dalla curva token/joule misurata su questo
+  hardware. Fonte nel campo cost_model_source di ogni record.
+  Potenza scheda GPU soltanto: esclude CPU, RAM, raffreddamento, PUE.
