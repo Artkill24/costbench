@@ -11,6 +11,16 @@ the gateway's numbers real. All local, all on AMD Radeon, zero egress.
 
 ---
 
+## Demo
+
+[![costbench demo](https://img.youtube.com/vi/7yQZLJPVTDE/maxresdefault.jpg)](https://youtu.be/7yQZLJPVTDE)
+
+*Four minutes: resolving the right power sensor on a shared 8-GPU host, the
+benchmark running live on the W7900, the cross-model result, and an agent
+task priced in measured joules with zero egress.*
+
+---
+
 ## What it does
 
 An agent reads files, plans across steps, answers — and then tells you
@@ -110,6 +120,8 @@ per joule.
 Both models peak at concurrency 4, then draw **less** power at concurrency 16
 while doing ~6.8× the work. Reproduced across models and four independent
 sessions.
+
+![power](charts/02_power_7b.png)
 
 ---
 
