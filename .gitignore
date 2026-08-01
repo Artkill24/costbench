@@ -1,3 +1,5 @@
 llama.cpp/
 *.gguf
 __pycache__/
+audit.sqlite
+*.sqlite

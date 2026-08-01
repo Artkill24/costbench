@@ -39,7 +39,12 @@ from typing import Optional
 
 import httpx
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+
+try:
+    import dashboard as _dashboard
+except ImportError:          # la dashboard e' opzionale
+    _dashboard = None
 
 # ==========================================================================
 # COST MODEL - da misure reali, non da stime
@@ -249,6 +254,25 @@ def build_app(state: State) -> FastAPI:
                 "inflight": state.inflight,
                 "cost_model_source": COST_MODEL_SOURCE}
 
+    @app.get("/", response_class=HTMLResponse)
+    async def root():
+        # una 404 sulla radice, in una demo, sembra un errore
+        return HTMLResponse(
+            '<meta http-equiv="refresh" content="0;url=/dashboard">')
+
+    @app.get("/dashboard", response_class=HTMLResponse)
+    async def dashboard():
+        """L'audit ledger reso leggibile a un umano.
+
+        Stessi dati di /v1/audit, ma con la domanda operativa in evidenza:
+        quanto e' costato, a chi, e quanta capacita' si sta sprecando
+        servendo a bassa concorrenza.
+        """
+        if _dashboard is None:
+            raise HTTPException(501, "dashboard.py non trovato")
+        return HTMLResponse(
+            _dashboard.render(state.audit.path, state.eur_per_kwh))
+
     @app.get("/v1/usage")
     async def usage(tenant: Optional[str] = None):
         t = state.audit.totals(tenant)
@@ -424,7 +448,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--upstream", default="http://127.0.0.1:8081")
     ap.add_argument("--host", default="127.0.0.1")
-    ap.add_argument("--port", type=int, default=8090)
+    ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--db", default="audit.sqlite")
     ap.add_argument("--eur-per-kwh", type=float, default=DEFAULT_EUR_PER_KWH)
     ap.add_argument("--enable-cloud", action="store_true",
