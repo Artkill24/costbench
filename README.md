@@ -224,6 +224,35 @@ reported back to the model instead of silently consuming the step budget.
 
 ---
 
+## The operator view
+
+The audit ledger answers "what happened". The dashboard answers the question
+an operator actually has: **what is this costing, who is spending it, and how
+much capacity am I wasting?**
+
+![gateway dashboard](media/dashboard.png)
+
+Served at `/dashboard`, rendered from the same SQLite ledger, with no
+external dependencies — a chart pulled from a CDN would not be on-prem.
+
+Three things it surfaces that the raw log does not:
+
+**Effective efficiency against the measured ceiling.** The headline
+tokens-per-joule figure is annotated with how far it sits from the 4.14
+measured at concurrency 16. Traffic served one request at a time shows up
+immediately as a fraction of what the card can do.
+
+**Where the joules went.** Energy grouped by the concurrency at which it was
+spent, red below 2, gold at 4, teal from 8 up — and a line stating what the
+same token count would have cost served entirely at concurrency 16. That
+difference is the headroom, in joules and in euros.
+
+**Whether the air gap held.** The external-egress counter reads
+`air-gap intact` only when it is genuinely zero. One externally routed
+request and the badge disappears and the number turns red.
+
+---
+
 ## How the measurement is made honest
 
 Four things had to be fixed before the numbers meant anything. Each failure
@@ -302,6 +331,7 @@ AMD EPYC 9334 host.
 |:--|:--|
 | `agent.py` | sandboxed on-prem agent with per-task energy accounting |
 | `gateway.py` | OpenAI-compatible cost-governance gateway |
+| `dashboard.py` | operator view of the audit ledger, served at `/dashboard` |
 | `costbench.py` | energy-per-token benchmark; PCI-resolved sensor, closed-loop load |
 | `charts.py` | figures and results table from `proofs/` |
 | `setup.sh` / `demo.sh` | unattended GPU sessions |
