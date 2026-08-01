@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>costbench — AMD AI DevMaster Track 2</title>
+<style>
+  /* A3 portrait, printed from the browser: File > Print > Save as PDF,
+     paper A3, margins none, background graphics ON */
+  @page { size: A3 portrait; margin: 0; }
+
+  :root{
+    --ink:#14161A;        /* charcoal, the instrument bezel            */
+    --paper:#FFFFFF;
+    --teal:#0D7A7A;       /* same accents as the charts in the repo    */
+    --gold:#C8992E;
+    --grey:#6E7377;
+    --hair:#D8DBDE;
+    --warm:#B4451F;       /* only for the power peak, used once        */
+
+    --display:"Helvetica Neue Condensed","Arial Narrow",
+              "Liberation Sans Narrow",Helvetica,Arial,sans-serif;
+    --body:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    /* measured values are always monospaced: they are readings */
+    --data:"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    width:297mm;height:420mm;background:var(--paper);color:var(--ink);
+    font-family:var(--body);-webkit-print-color-adjust:exact;
+    print-color-adjust:exact;display:flex;flex-direction:column;
+  }
+
+  /* ---------- header ---------- */
+  .head{background:var(--ink);color:#fff;padding:13mm 14mm 11mm}
+  .eyebrow{
+    font-family:var(--data);font-size:8.5pt;letter-spacing:.22em;
+    text-transform:uppercase;color:#9BA1A6;margin-bottom:5mm
+  }
+  h1{
+    font-family:var(--display);font-size:64pt;line-height:.9;
+    letter-spacing:-.02em;font-weight:700
+  }
+  .thesis{
+    font-size:15pt;line-height:1.32;margin-top:6mm;max-width:210mm;
+    color:#E8EAEC;font-weight:300
+  }
+  .thesis b{color:var(--gold);font-weight:600}
+  .rig{
+    font-family:var(--data);font-size:8.5pt;color:#9BA1A6;margin-top:7mm;
+    padding-top:5mm;border-top:1px solid #2C3136;letter-spacing:.02em
+  }
+
+  /* ---------- signature: the watt scale ---------- */
+  .scale{padding:11mm 14mm 8mm;border-bottom:1px solid var(--hair)}
+  .scale-label{
+    font-family:var(--data);font-size:8pt;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--grey);margin-bottom:7mm
+  }
+  .track{position:relative;height:30mm}
+  .rule{
+    position:absolute;top:15mm;left:0;right:0;height:1px;background:var(--hair)
+  }
+  .tick{position:absolute;top:0;transform:translateX(-50%);text-align:center}
+  .tick .bar{width:2px;background:var(--ink);margin:0 auto}
+  .tick .w{
+    font-family:var(--data);font-size:15pt;font-weight:700;
+    letter-spacing:-.02em;line-height:1
+  }
+  .tick .c{
+    font-family:var(--data);font-size:7.5pt;color:var(--grey);
+    margin-top:2mm;letter-spacing:.06em;white-space:nowrap
+  }
+  .t-idle .bar{height:6mm;background:var(--grey)}
+  .t-idle .w{color:var(--grey)}
+  .t-peak .bar{height:15mm;background:var(--warm)}
+  .t-peak .w{color:var(--warm)}
+  .t-16  .bar{height:11mm;background:var(--teal)}
+  .t-16  .w{color:var(--teal)}
+  .arrow{
+    position:absolute;top:22mm;font-family:var(--data);font-size:8.5pt;
+    color:var(--teal);letter-spacing:.02em
+  }
+
+  /* ---------- headline numbers ---------- */
+  .nums{display:flex;border-bottom:1px solid var(--hair)}
+  .num{flex:1;padding:9mm 14mm;border-right:1px solid var(--hair)}
+  .num:last-child{border-right:none}
+  .num .v{
+    font-family:var(--data);font-size:34pt;font-weight:700;
+    letter-spacing:-.03em;line-height:1
+  }
+  .num .u{font-size:12pt;font-weight:400;color:var(--grey);letter-spacing:0}
+  .num .k{
+    font-size:9.5pt;color:var(--grey);margin-top:3mm;line-height:1.35
+  }
+  .num:nth-child(1) .v{color:var(--ink)}
+  .num:nth-child(2) .v{color:var(--teal)}
+  .num:nth-child(3) .v{color:var(--gold)}
+
+  /* ---------- chart ---------- */
+  .chart{padding:9mm 14mm 4mm;flex:1}
+  .chart h2{
+    font-family:var(--display);font-size:21pt;letter-spacing:-.01em;
+    margin-bottom:2mm;font-weight:700
+  }
+  .chart .sub{font-size:10.5pt;color:var(--grey);margin-bottom:5mm}
+  .chart img{width:100%;display:block}
+
+  /* ---------- findings ---------- */
+  .find{display:flex;gap:9mm;padding:5mm 14mm 8mm}
+  .f{flex:1}
+  .f .t{
+    font-family:var(--data);font-size:8pt;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--teal);margin-bottom:3mm
+  }
+  .f .h{font-size:12.5pt;font-weight:600;line-height:1.28;margin-bottom:3mm}
+  .f p{font-size:9.5pt;line-height:1.45;color:#3A4045}
+  .f .mono{font-family:var(--data);font-size:9pt}
+
+  /* ---------- method ---------- */
+  .method{
+    background:#F4F6F7;padding:8mm 14mm;border-top:1px solid var(--hair)
+  }
+  .method .t{
+    font-family:var(--data);font-size:8pt;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--grey);margin-bottom:5mm
+  }
+  .grid{display:flex;gap:7mm}
+  .m{flex:1;font-size:8.7pt;line-height:1.4;color:#3A4045}
+  .m b{display:block;font-family:var(--data);font-size:8.2pt;
+       color:var(--ink);margin-bottom:1.5mm;font-weight:700}
+
+  /* ---------- footer ---------- */
+  .foot{
+    background:var(--ink);color:#fff;padding:9mm 14mm;
+    display:flex;align-items:center;gap:11mm
+  }
+  .foot .qr{text-align:center}
+  .foot .qr img{width:24mm;height:24mm;display:block;background:#fff;padding:1.5mm}
+  .foot .qr span{
+    font-family:var(--data);font-size:7pt;color:#9BA1A6;
+    letter-spacing:.1em;display:block;margin-top:2mm
+  }
+  .foot .txt{flex:1}
+  .foot .txt .a{font-family:var(--display);font-size:17pt;font-weight:700}
+  .foot .txt .b{
+    font-family:var(--data);font-size:8.5pt;color:#9BA1A6;margin-top:2.5mm;
+    line-height:1.55
+  }
+  .foot .txt .b em{color:var(--gold);font-style:normal}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="eyebrow">AMD AI DevMaster &nbsp;·&nbsp; Track 2 &nbsp;·&nbsp; Agentic AI</div>
+  <h1>costbench</h1>
+  <p class="thesis">
+    On-prem AI agents have no invoice. costbench gives them one —
+    priced in <b>joules measured on the card that ran the work</b>.
+  </p>
+  <div class="rig">
+    AMD Radeon PRO W7900 (gfx1100) · ROCm 7.2.1 · llama.cpp HIP ·
+    Qwen2.5-Coder 7B &amp; 14B Q4_K_M · egress: on-prem only
+  </div>
+</header>
+
+<section class="scale">
+  <div class="scale-label">GPU board power — measured, sysfs power1_average</div>
+  <div class="track">
+    <div class="rule"></div>
+    <div class="tick t-idle" style="left:6%">
+      <div class="w">13 W</div><div class="bar"></div><div class="c">idle</div>
+    </div>
+    <div class="tick t-peak" style="left:38%">
+      <div class="w">229 W</div><div class="bar"></div><div class="c">concurrency 4</div>
+    </div>
+    <div class="tick t-16" style="left:72%">
+      <div class="w">168 W</div><div class="bar"></div><div class="c">concurrency 16 · 6.8× the work</div>
+    </div>
+    <div class="arrow" style="left:44%">
+      ← power falls while throughput rises
+    </div>
+  </div>
+</section>
+
+<section class="nums">
+  <div class="num">
+    <div class="v">696<span class="u"> tok/s</span></div>
+    <div class="k">sustained on one W7900<br>7B, concurrency 16</div>
+  </div>
+  <div class="num">
+    <div class="v">8.7<span class="u">×</span></div>
+    <div class="k">energy efficiency from batching<br>8.70× on 7B · 8.80× on 14B</div>
+  </div>
+  <div class="num">
+    <div class="v">−88<span class="u">%</span></div>
+    <div class="k">energy cost per token<br>paid with 7.8× time to first token</div>
+  </div>
+</section>
+
+<section class="chart">
+  <h2>The gain from batching does not depend on the model</h2>
+  <p class="sub">Two models, one twice the size of the other. Normalise each
+     curve by its own concurrency-1 value and they coincide within 1%.</p>
+  <img src="charts/05_model_comparison.png" alt="tokens per joule, 7B vs 14B">
+</section>
+
+<section class="find">
+  <div class="f">
+    <div class="t">Finding 1</div>
+    <div class="h">Relative efficiency gain is model-independent</div>
+    <p><span class="mono">8.70×</span> on the 7B,
+       <span class="mono">8.80×</span> on the 14B — a property of the
+       architecture, not of one model. Four independent sessions, two load
+       patterns, achieved concurrency verified per run.</p>
+  </div>
+  <div class="f">
+    <div class="t">Finding 2</div>
+    <div class="h">Absolute efficiency scales inversely with model size</div>
+    <p>The 14B/7B tokens-per-joule ratio is
+       <span class="mono">0.53 / 0.52 / 0.54</span> at concurrency 1 / 4 / 16.
+       Double the weights, half the efficiency: the signature of a
+       memory-bandwidth-bound decode.</p>
+  </div>
+  <div class="f">
+    <div class="t">What it buys</div>
+    <div class="h">A bill for on-prem inference</div>
+    <p>A gateway meters every request against the measured curve; an agent
+       reports what each task cost. One recorded task:
+       <span class="mono">194 tokens · 404 J · €0.000028 · 0 bytes egress</span>
+       — the zero verified against a local audit ledger, not asserted.</p>
+  </div>
+</section>
+
+<section class="method">
+  <div class="t">Four measurement bugs found and fixed — each produced plausible-looking data</div>
+  <div class="grid">
+    <div class="m"><b>Sensor lag ~18 s</b>
+      power1_average is a long-window mean; 2–5 s runs reported 14 W under
+      full load. Fixed with 90 s runs, first 25 s discarded.</div>
+    <div class="m"><b>Shared 8-GPU host</b>
+      sysfs exposes every card; the first readable path was somebody else's.
+      GPU now resolved by PCI bus, recorded in every result.</div>
+    <div class="m"><b>Wave-barrier load</b>
+      waiting for all N leaves an idle tail that grows with N, deflating
+      power at high batch. Replaced by closed-loop load.</div>
+    <div class="m"><b>Stale server on the port</b>
+      a "14B" run re-measured the 7B. The served model is now verified, and
+      the invalid run is kept in <span style="font-family:var(--data)">rejected/</span>.</div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="qr">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATYAAAE2CAIAAABk3in+AAAGAUlEQVR4nO3dQY4jRRBAURpxBcSC+x+NBeIQxQnIYpSKyZ/u97attstlf+UmFPX1PM8vQNWvpy8AWJEopEkU0iQKaRKFNIlCmkQhTaKQJlFI+23959//+PPnXMdP88/ffy3+uvN5d1557qpOWX+iHTfejbX1vXKKQppEIU2ikCZRSJMopEkU0iQKaRKFNIlC2st00drcBMmOuQmhHTuvPDe3tLZzJ099C5/3m3SKQppEIU2ikCZRSJMopEkU0iQKaRKFNIlC2tZ00drcjplTEySn9g81J2bWmtuYbvxNOkUhTaKQJlFIkyikSRTSJAppEoU0iUKaRCFtcLroRqe29TRfuTkh9N04RSFNopAmUUiTKKRJFNIkCmkShTSJQppEIc100Q+Ye8rY3Cs356Vu3MZ0ilMU0iQKaRKFNIlCmkQhTaKQJlFIkyikSRTSBqeLPm+C5Mbnee3sH9r53+aT4G78TTpFIU2ikCZRSJMopEkU0iQKaRKFNIlCmkQhbWu66Ls9G+vUpM6NTyg7dc3Nu7HDKQppEoU0iUKaRCFNopAmUUiTKKRJFNIkCmlfz/OcvoaQ5sadHc25pea9anKKQppEIU2ikCZRSJMopEkU0iQKaRKFNIlC2svuop3ZlB3NmZi1uXvVnHma+xaa+4fmvsH1KztFIU2ikCZRSJMopEkU0iQKaRKFNIlCmkQh7WV30Y1TPnPPINvRnD2a83mfaI7pIriYRCFNopAmUUiTKKRJFNIkCmkShTSJQtrL7qK15k6duYmo77atZ86p+3zqiWw71+wUhTSJQppEIU2ikCZRSJMopEkU0iQKaRKFtJfdRWvN7UQ7btww9HnPXFtr/urm7qRTFNIkCmkShTSJQppEIU2ikCZRSJMopEkU0l52FzWfjNbc9DM3X3JqMqm5jenUVNOOnWt2ikKaRCFNopAmUUiTKKRJFNIkCmkShTSJQtrL7qK5XT5rN07qrDWv6pTmFqhT7C6Ci0kU0iQKaRKFNIlCmkQhTaKQJlFIkyikvewu2rEzmbQzi9OcH5r737Xm3fi8q5p7ZacopEkU0iQKaRKFNIlCmkQhTaKQJlFIkyikvewu+jw3br5pzsQ0n+Z2yty34BSFNIlCmkQhTaKQJlFIkyikSRTSJAppEoW0l91Fc09Ga06u7GjuH5q7k3Pf4Knf1Zyd93WKQppEIU2ikCZRSJMopEkU0iQKaRKFNIlC2taT0ZrPt1o7NX0y95y4nfdd+7wtQafuxs637xSFNIlCmkQhTaKQJlFIkyikSRTSJAppEoW0l+miU9M2Nz5Xa+6ab7wbc05d86ltW05RSJMopEkU0iQKaRKFNIlCmkQhTaKQJlFI29pdtNZ8RtWOU8/zWrvxfddOzfHsbJCamwBzikKaRCFNopAmUUiTKKRJFNIkCmkShTSJQtrX8zyLP8/NapyaIDml+TS3U1uRfIP//5WdopAmUUiTKKRJFNIkCmkShTSJQppEIU2ikPYyXfTdnJqmarIVqfC+TlFIkyikSRTSJAppEoU0iUKaRCFNopAmUUh7eTLajTMxa80JklPbiW6ciGpucpr7XTlFIU2ikCZRSJMopEkU0iQKaRKFNIlCmkQh7WW6aG1uomJHc0Zk7n1P7eM5NZl06hOtzX0LTlFIkyikSRTSJAppEoU0iUKaRCFNopAmUUjbmi5au3G+pLmtZ0dz08+pV95531OTZ05RSJMopEkU0iQKaRKFNIlCmkQhTaKQJlFIG5wuutGNc0s7O4SaE2DNKZ+1uSffOUUhTaKQJlFIkyikSRTSJAppEoU0iUKaRCHNdNEPmHvm2qltPXMzQDdugWpes1MU0iQKaRKFNIlCmkQhTaKQJlFIkyikSRTSBqeLmjtmdsx9olOv3NyotLazB+jG+TCnKKRJFNIkCmkShTSJQppEIU2ikCZRSJMopG1NFzV3vew4NbkyZ33Nc8/zOuXGb2HNKQppEoU0iUKaRCFNopAmUUiTKKRJFNIkCmlfz/OcvgbgPzlFIU2ikCZRSJMopEkU0iQKaRKFNIlCmkQh7V98r/HY1VAxmwAAAABJRU5ErkJggg==" alt="repository QR">
+    <span>REPOSITORY</span>
+  </div>
+  <div class="qr">
+    <img src="data:image/png;base64,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" alt="demo video QR">
+    <span>DEMO 4:00</span>
+  </div>
+  <div class="txt">
+    <div class="a">github.com/Artkill24/costbench</div>
+    <div class="b">
+      Saad Kaicar · solo · Italy &nbsp;|&nbsp; MIT licensed<br>
+      Every figure on this poster is <em>measured</em> and reproducible from
+      <em>proofs/</em> — raw results, logs, audit exports, SHA256SUMS.<br>
+      Declared limits: GPU board power only; the cause of the power drop is
+      hypothesised, not proven.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
