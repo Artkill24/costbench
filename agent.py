@@ -32,6 +32,11 @@ import time
 import urllib.error
 import urllib.request
 
+try:
+    from memory import Memory
+except ImportError:          # la memoria e' opzionale
+    Memory = None
+
 # ==========================================================================
 # TOOL - solo lettura, confinati sotto --root
 # ==========================================================================
@@ -134,6 +139,9 @@ When you have enough information, reply with EXACTLY:
 
 Rules:
 - One JSON object per reply. No prose outside the JSON. No markdown fences.
+- If facts from earlier tasks are provided below, TRUST THEM and do not
+  re-derive them with tools. Re-reading a file you already summarised costs
+  energy for no new information.
 - Paths are RELATIVE to the workspace root shown below. Absolute paths
   like /var/log or /opt are outside the sandbox and will be DENIED.
 - `grep` takes a REGEX matched against file CONTENTS, and `path` must be
@@ -303,12 +311,17 @@ def parse_action(text):
     return None
 
 
-def run(task, sb, client, max_steps, verbose=True):
+def run(task, sb, client, max_steps, verbose=True, memory=None):
     overview = workspace_overview(sb)
+    recalled = memory.as_context(task) if memory else ""
+    if verbose and recalled:
+        print(f"  memoria: {memory.hits} fatti richiamati, "
+              f"{memory.tokens_saved} token gia' spesi in passato")
     opening = (
         f"Workspace root: {sb.root}\n"
         f"Files available (paths are relative to this root):\n"
         + "\n".join(f"  {e}" for e in overview)
+        + (f"\n\n{recalled}" if recalled else "")
         + f"\n\nTask: {task}"
     )
     messages = [{"role": "system", "content": SYSTEM},
@@ -397,12 +410,28 @@ def run(task, sb, client, max_steps, verbose=True):
     else:
         answer = "(budget di passi esaurito senza risposta finale)"
 
+    if memory and answer and len(answer) > 30 and "budget" not in answer[:20]:
+        # la chiave e' derivata dal task: una domanda simile la ritrovera'
+        import hashlib
+        key = "answer_" + hashlib.sha1(task.encode()).hexdigest()[:10]
+        memory.remember("answer", key, f"Q: {task}\nA: {answer}",
+                        tokens_at_write=client.total_tokens)
+        # e cio' che ha imparato leggendo, cosi' non rilegge
+        for e in trace:
+            if e.get("kind") == "tool" and e.get("tool") in ("list_files",
+                                                             "stat"):
+                memory.remember("workspace",
+                                f"{e['tool']}_{json.dumps(e['args'], sort_keys=True)[:60]}",
+                                f"already inspected: {e['args']}",
+                                tokens_at_write=40)
+
     return {
         "task": task,
         "answer": answer,
         "steps": len(trace),
         "trace": trace,
         "wall_s": round(time.perf_counter() - t0, 2),
+        "memory": memory.stats() if memory else None,
     }
 
 
@@ -423,6 +452,12 @@ def report(result, client):
     print(f"  costo elettrico       : EUR {client.total_eur:.8f}")
     print(f"  durata                : {result['wall_s']} s")
     print(f"  chiamate con egress   : {client.external_egress_calls}")
+    ms = result.get("memory")
+    if ms and ms["session_hits"]:
+        print(f"  memoria               : {ms['session_hits']} fatti richiamati, "
+              f"{ms['session_tokens_saved']} token non rispesi")
+        print(f"  energia risparmiata   : {ms['session_joules_saved']} J "
+              f"(EUR {ms['session_eur_saved']:.8f})")
     print(f"  byte usciti dalla rete: 0 "
           f"(verificato contro l'audit del gateway, non dichiarato)")
     if u:
@@ -446,6 +481,9 @@ def main():
     ap.add_argument("--no-constrain", action="store_true",
                     help="non inviare json_schema (per upstream che non lo "
                          "supportano, es. mock_upstream.py)")
+    ap.add_argument("--memory", metavar="DB",
+                    help="file SQLite della memoria persistente. Senza questo "
+                         "l'agente riparte da zero a ogni task.")
     ap.add_argument("--json-out", help="scrive il trace completo su file")
     a = ap.parse_args()
 
@@ -456,8 +494,16 @@ def main():
     print(f"gateway: {a.gateway} · output vincolato: "
           f"{'no' if a.no_constrain else 'si (json_schema)'}")
 
+    mem = None
+    if a.memory:
+        if Memory is None:
+            print("ERRORE: memory.py non trovato")
+            return 2
+        mem = Memory(a.memory)
+        print(f"memoria  : {a.memory}")
+
     try:
-        result = run(a.task, sb, client, a.max_steps)
+        result = run(a.task, sb, client, a.max_steps, memory=mem)
     except RuntimeError as e:
         print(f"\nERRORE: {e}")
         return 2
