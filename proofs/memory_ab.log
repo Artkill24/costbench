@@ -1,0 +1,57 @@
+
+[1;36m[21:05:22] === ROUND A · memoria fredda[0m
+
+[1;36m[21:05:22] cold · task 1/3[0m
+
+[1;36m[21:05:24] cold · task 2/3[0m
+
+[1;36m[21:05:26] cold · task 3/3[0m
+
+[1;36m[21:05:27] === popolo la memoria con il giro A[0m
+    2 uses  answer     answer_29d01a346c
+    1 uses  answer     answer_780c9a8ea5
+    0 uses  workspace  list_files_{"path": "proofs/", "pattern": "*.txt"}
+    0 uses  answer     answer_02f3791d9f
+
+[1;36m[21:05:30] === ROUND B · memoria calda[0m
+
+[1;36m[21:05:30] warm · task 1/3[0m
+memoria  : /tmp/agent_memory_20260802T210522Z.sqlite
+  memoria: 3 fatti richiamati, 145 token gia' spesi in passato
+  memoria               : 3 fatti richiamati, 145 token non rispesi
+
+[1;36m[21:05:30] warm · task 2/3[0m
+memoria  : /tmp/agent_memory_20260802T210522Z.sqlite
+  memoria: 3 fatti richiamati, 74 token gia' spesi in passato
+  memoria               : 3 fatti richiamati, 74 token non rispesi
+
+[1;36m[21:05:31] warm · task 3/3[0m
+memoria  : /tmp/agent_memory_20260802T210522Z.sqlite
+  memoria: 3 fatti richiamati, 74 token gia' spesi in passato
+  memoria               : 3 fatti richiamati, 74 token non rispesi
+
+[1;36m[21:05:31] === CONFRONTO[0m
+
+                            cold      warm       delta
+------------------------------------------------------
+steps                          7         3          -4
+tokens                       227        70        -157
+joules                      54.8      16.9       -37.9
+EUR                   0.000003810.00000117 -0.00000263
+
+token risparmiati: 69.2%
+energia risparmiata: 37.9 J (EUR 0.00000263)
+
+scritto: /workspace/template-repos/template-890/repo/proofs/memory_ab_20260802T210522Z.json
+
+[1;36m[21:05:31] stato finale della memoria[0m
+{
+  "entries": 4,
+  "total_recalls": 12,
+  "tokens_stored": 110,
+  "session_hits": 0,
+  "session_tokens_saved": 0,
+  "session_joules_saved": 0.0,
+  "session_eur_saved": 0.0,
+  "tokens_per_joule_basis": 4.142
+}
