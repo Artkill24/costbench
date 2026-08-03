@@ -253,6 +253,49 @@ request and the badge disappears and the number turns red.
 
 ---
 
+## Memory is an energy optimisation
+
+An agent without memory starts from zero every time: it re-runs `list_files`,
+re-reads the same files, re-spends the same tokens. Every re-spent token is
+re-spent energy — and on this hardware we know how much, because we measured
+it.
+
+So the memory layer here is not a convenience feature. Its benefit is
+measurable in joules.
+
+Three tasks over the same measurement files, run twice — once with the memory
+cleared, once with the memory left by the first round:
+
+| | cold | warm | delta |
+|:--|---:|---:|---:|
+| steps | 6 | 4 | −2 |
+| tokens | 305 | 218 | **−28.5%** |
+| joules | 73.6 | 52.6 | **−21.0 J** |
+| cost | €0.0000051 | €0.0000037 | −€0.0000015 |
+
+Raw data in [`proofs/memory_ab_20260803T024708Z.json`](proofs/).
+
+**What the number does and does not mean.** Two of the three tasks were
+answered correctly in both rounds, citing real values from real files
+(`411.65 tok/s at concurrency 16`, `184.66 W`). The third failed in both
+rounds, so the comparison is like-for-like — but it is a comparison over
+three short tasks, not a benchmark. The saving comes from not re-deriving
+facts already established, so it grows with task length and shrinks to zero
+on genuinely novel questions.
+
+**The joules are derived, not directly measured.** An agent task lasts a few
+seconds — far below the power sensor's ~18 second averaging window, which is
+exactly the trap documented below. Tokens are converted to joules using the
+measured curve (4.142 tok/J at concurrency 16), the same curve the gateway
+uses to price requests.
+
+An earlier version of this experiment reported 69% and was thrown away: the
+agent had not answered the question in either round, so it had only learned
+to fail faster. It is in [`rejected/`](rejected/) with the three tool defects
+that caused it.
+
+---
+
 ## How the measurement is made honest
 
 Four things had to be fixed before the numbers meant anything. Each failure
@@ -331,6 +374,7 @@ AMD EPYC 9334 host.
 |:--|:--|
 | `agent.py` | sandboxed on-prem agent with per-task energy accounting |
 | `gateway.py` | OpenAI-compatible cost-governance gateway |
+| `memory.py` | persistent agent memory, priced in measured joules |
 | `dashboard.py` | operator view of the audit ledger, served at `/dashboard` |
 | `costbench.py` | energy-per-token benchmark; PCI-resolved sensor, closed-loop load |
 | `charts.py` | figures and results table from `proofs/` |
