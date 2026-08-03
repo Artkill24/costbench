@@ -24,6 +24,7 @@ contabilita' di costo invece e' reale in entrambi i casi.
 
 import argparse
 import fnmatch
+import glob
 import json
 import os
 import re
@@ -68,7 +69,7 @@ def tool_list_files(sb, path=".", pattern="*"):
     for dirpath, dirnames, filenames in os.walk(base):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         for fn in filenames:
-            if fnmatch.fnmatch(fn, pattern):
+            if fnmatch.fnmatch(fn, pattern) and _searchable(fn):
                 rel = os.path.relpath(os.path.join(dirpath, fn), sb.root)
                 out.append(rel)
         if len(out) > 300:
@@ -85,28 +86,148 @@ def tool_read_file(sb, path, max_lines=120):
     return "".join(lines)[:MAX_READ_BYTES]
 
 
+# file che non vanno mai letti: binari, e la memoria dell'agente stesso
+# (cercarci dentro sarebbe circolare: troverebbe le proprie risposte)
+BINARY_EXT = {".sqlite", ".db", ".png", ".jpg", ".jpeg", ".pdf", ".gguf",
+              ".tar", ".gz", ".zip", ".so", ".o", ".bin", ".mp4"}
+
+
+def _searchable(fp):
+    return os.path.splitext(fp)[1].lower() not in BINARY_EXT
+
+
 def tool_grep(sb, pattern, path=".", max_hits=40):
-    base = sb.resolve(path)
-    rx = re.compile(pattern)
-    hits = []
-    walk = [base] if os.path.isfile(base) else None
-    if walk is None:
-        walk = []
-        for dirpath, dirnames, filenames in os.walk(base):
-            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-            walk += [os.path.join(dirpath, f) for f in filenames]
-    for fp in walk:
+    """Cerca una regex nel contenuto dei file.
+
+    Due accomodamenti al comportamento reale dei modelli piccoli, che il
+    prompt da solo non correggeva:
+      - se `path` contiene un carattere jolly, lo si tratta come glob
+        invece di fallire con zero risultati;
+      - la ricerca e' su riga singola, ma i JSON indentati spezzano i
+        campi correlati su righe diverse, quindi un pattern con piu'
+        termini separati da .* non troverebbe nulla. Se il pattern non
+        produce risultati e contiene '.*', si riprova con il primo
+        termine soltanto e si segnala il fallback.
+    """
+    if any(c in path for c in "*?["):
+        candidates = [p for p in glob.glob(os.path.join(sb.root, path))
+                      if os.path.isfile(p)]
+        candidates = [sb.resolve(os.path.relpath(p, sb.root))
+                      for p in candidates]
+    else:
+        base = sb.resolve(path)
+        if os.path.isfile(base):
+            candidates = [base]
+        else:
+            candidates = []
+            for dirpath, dirnames, filenames in os.walk(base):
+                dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+                candidates += [os.path.join(dirpath, f) for f in filenames]
+    candidates = [c for c in candidates if _searchable(c)]
+
+    def _search(rx_str):
         try:
-            with open(fp, errors="replace") as f:
-                for i, line in enumerate(f, 1):
-                    if rx.search(line):
-                        rel = os.path.relpath(fp, sb.root)
-                        hits.append(f"{rel}:{i}: {line.rstrip()[:200]}")
-                        if len(hits) >= max_hits:
-                            return "\n".join(hits)
-        except (OSError, UnicodeDecodeError):
-            continue
-    return "\n".join(hits) or "(nessuna occorrenza)"
+            rx = re.compile(rx_str)
+        except re.error as e:
+            return None, f"ERRORE regex: {e}"
+        found = []
+        for fp in candidates:
+            try:
+                with open(fp, errors="replace") as f:
+                    for i, line in enumerate(f, 1):
+                        if rx.search(line):
+                            rel = os.path.relpath(fp, sb.root)
+                            found.append(f"{rel}:{i}: {line.strip()[:200]}")
+                            if len(found) >= max_hits:
+                                return found, None
+            except (OSError, UnicodeDecodeError):
+                continue
+        return found, None
+
+    hits, err = _search(pattern)
+    if err:
+        return err
+
+    if not hits and ".*" in pattern:
+        first = pattern.split(".*")[0].strip()
+        if first and first != pattern:
+            hits, _ = _search(first)
+            if hits:
+                return (f"(no line matched the full pattern -- JSON fields "
+                        f"sit on separate lines. Retried with '{first}':)\n"
+                        + "\n".join(hits))
+
+    if not hits:
+        return ("(no match. If you were looking for a JSON field, search for "
+                "the field name alone, e.g. system_tok_s -- indented JSON "
+                "puts each field on its own line.)")
+    return "\n".join(hits)
+
+
+def tool_read_json(sb, path, field=None, max_items=12):
+    """Legge un file JSON in modo strutturato.
+
+    grep trova "system_tok_s": 696.28 ma non dice a quale run appartiene,
+    perche' la riga non lo sa. Questo tool percorre la struttura e riporta
+    il valore insieme al suo contesto.
+
+    field: nome di campo da cercare a qualsiasi profondita'. Senza, ritorna
+    lo scheletro del documento.
+    """
+    p = sb.resolve(path)
+    try:
+        with open(p) as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        return f"ERRORE: non e' JSON valido: {e}"
+    except OSError as e:
+        return f"ERRORE: {e}"
+
+    if not field:
+        def skeleton(o, depth=0):
+            pad = "  " * depth
+            if isinstance(o, dict):
+                out = []
+                for k, v in list(o.items())[:max_items]:
+                    if isinstance(v, (dict, list)):
+                        out.append(f"{pad}{k}:")
+                        out.append(skeleton(v, depth + 1))
+                    else:
+                        sv = str(v)
+                        out.append(f"{pad}{k}: "
+                                   f"{sv[:70]}{'...' if len(sv) > 70 else ''}")
+                return "\n".join(out)
+            if isinstance(o, list):
+                return (f"{pad}[{len(o)} items]\n"
+                        + skeleton(o[0], depth + 1) if o else f"{pad}[]")
+            return f"{pad}{o}"
+        return skeleton(data)
+
+    # cerca il campo, portandosi dietro il contesto del ramo
+    hits = []
+
+    def walk(o, path_parts):
+        if len(hits) >= max_items:
+            return
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if k == field and not isinstance(v, (dict, list)):
+                    ctx = {kk: vv for kk, vv in o.items()
+                           if not isinstance(vv, (dict, list)) and kk != field}
+                    ctx_s = ", ".join(f"{kk}={vv}" for kk, vv in
+                                      list(ctx.items())[:4])
+                    hits.append(f"{'.'.join(path_parts + [k])} = {v}"
+                                + (f"   [{ctx_s}]" if ctx_s else ""))
+                walk(v, path_parts + [k])
+        elif isinstance(o, list):
+            for i, v in enumerate(o):
+                walk(v, path_parts + [f"[{i}]"])
+
+    walk(data, [])
+    if not hits:
+        return (f"(field '{field}' not found in {path}. "
+                f"Call read_json without a field to see its structure.)")
+    return "\n".join(hits)
 
 
 def tool_stat(sb, path="."):
@@ -121,7 +242,8 @@ def tool_stat(sb, path="."):
 TOOLS = {
     "list_files": (tool_list_files, "list_files(path, pattern) - elenca i file"),
     "read_file":  (tool_read_file,  "read_file(path, max_lines) - legge un file"),
-    "grep":       (tool_grep,       "grep(pattern, path) - cerca una regex"),
+    "grep":       (tool_grep,       "grep(pattern, path) - cerca una regex nel contenuto"),
+    "read_json":  (tool_read_json,  "read_json(path, field) - legge un JSON; con field estrae quel campo ovunque sia, col suo contesto"),
     "stat":       (tool_stat,       "stat(path) - metadati di un percorso"),
 }
 
@@ -149,6 +271,9 @@ Rules:
   that literally appear in the data (e.g. tokens_per_joule, avg_w), not
   for whole sentences.
 - The data files are JSON with English field names. Search in English.
+- For a value inside a JSON file, prefer `read_json` over `grep`: grep finds
+  the line but not which record it belongs to. read_json reports the value
+  with its surrounding fields, so you can tell concurrency 1 from 16.
 - Never invent file contents. If you did not read it, say so.
 """
 
@@ -187,7 +312,8 @@ ACTION_SCHEMA = {
             "type": "object",
             "properties": {
                 "tool": {"type": "string",
-                         "enum": ["list_files", "read_file", "grep", "stat"]},
+                         "enum": ["list_files", "read_file", "grep", "stat",
+                                  "read_json"]},
                 "args": {"type": "object"},
             },
             "required": ["tool", "args"],

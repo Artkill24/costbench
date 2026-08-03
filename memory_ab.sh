@@ -75,7 +75,10 @@ proofs, stamp, memdb = sys.argv[1], sys.argv[2], sys.argv[3]
 
 def total(label):
     tok = steps = 0
-    for f in sorted(glob.glob(f"{proofs}/memab_{label}_*_{stamp}.json")):
+    files = sorted(glob.glob(f"{proofs}/memab_{label}_*_{stamp}.json"))
+    if len(files) != 3:
+        print(f"ATTENZIONE: {len(files)} file per {label}, attesi 3")
+    for f in files:
         d = json.load(open(f))
         acc = d.get("accounting") or {}
         tok += acc.get("tokens", 0)
