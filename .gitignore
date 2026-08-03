@@ -1,5 +1,31 @@
+# --- artefatti di trasferimento -------------------------------------------
+# archivi usati per portare i risultati fuori dall'istanza GPU
+*.tar.gz
+*.b64
+
+# --- log locali ------------------------------------------------------------
+# i log che contano stanno in proofs/ e sono tracciati
+session.log
+nohup.out
+
+# --- ambiente Radeon Cloud -------------------------------------------------
+.amd-oneclick-source
+
+# --- build e pesi ----------------------------------------------------------
+# enormi e ricostruibili con setup.sh
 llama.cpp/
+models/
 *.gguf
+
+# --- database di lavoro ----------------------------------------------------
+# NB: i .sqlite dentro proofs/ sono prove deliberate e restano tracciati.
+# Qui si escludono solo quelli creati durante l'uso normale.
+/audit.sqlite
+/memory.sqlite
+/*.sqlite
+*.sqlite-journal
+
+# --- python ---------------------------------------------------------------
 __pycache__/
-audit.sqlite
-*.sqlite
+*.pyc
+.venv/
