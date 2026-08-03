@@ -1,0 +1,22 @@
+{
+  "measured": true,
+  "experiment": "agent memory A/B",
+  "basis_tokens_per_joule": 4.142,
+  "basis_source": "costbench_qwen7b-q4km-v3-closedloop_20260729T222700Z.json",
+  "eur_per_kwh": 0.25,
+  "cold": {
+    "steps": 6,
+    "tokens": 305,
+    "joules": 73.64,
+    "eur": 5.1136e-06
+  },
+  "warm": {
+    "steps": 4,
+    "tokens": 218,
+    "joules": 52.63,
+    "eur": 3.655e-06
+  },
+  "tokens_saved_pct": 28.5,
+  "joules_saved": 21.0,
+  "note": "Energy is derived from the measured tokens-per-joule curve, not measured directly during this experiment: the workload is too short for the power sensor's ~18 s averaging window."
+}

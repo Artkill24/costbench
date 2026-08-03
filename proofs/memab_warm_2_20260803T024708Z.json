@@ -1,0 +1,32 @@
+{
+  "task": "What system_tok_s was measured at concurrency 16, and what was the avg_w power at that level?",
+  "answer": "The system_tok_s value at concurrency 16 is 411.65, as observed in the file proofs/costbench_qwen14b-q4km-closedloop_20260730T111623Z.json. The avg_w power at that level is 184.66 W, as recorded in the same file.",
+  "steps": 1,
+  "trace": [
+    {
+      "step": 1,
+      "kind": "answer"
+    }
+  ],
+  "wall_s": 1.1,
+  "memory": {
+    "entries": 4,
+    "total_recalls": 9,
+    "tokens_stored": 297,
+    "session_hits": 3,
+    "session_tokens_saved": 285,
+    "session_joules_saved": 68.81,
+    "session_eur_saved": 4.7783e-06,
+    "tokens_per_joule_basis": 4.142
+  },
+  "accounting": {
+    "calls": 1,
+    "tokens": 88,
+    "energy_joules": 183.333,
+    "cost_eur": 1.273e-05,
+    "external_egress_calls": 0,
+    "request_ids": [
+      "c81285ec-9973-4aad-bbd9-32acc8b00623"
+    ]
+  }
+}
